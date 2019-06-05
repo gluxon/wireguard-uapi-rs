@@ -1,0 +1,17 @@
+[package]
+name = "wireguard-uapi"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+buffering = "0.1.0"
+derive_builder = "0.7.1"
+failure = "0.1.5"
+libc = "0.2.51"
+neli = "0.3.1"
+
+[dev-dependencies]
+base64 = "0.10.1"
+colored = "1.7"
+predicates = "1"
+rand = "0.6.5"
