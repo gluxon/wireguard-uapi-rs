@@ -4,11 +4,11 @@ version = "0.1.0"
 edition = "2018"
 
 [dependencies]
-buffering = "0.1.0"
+buffering = { version = "0.3.2",  features = ["copy"] }
 derive_builder = "0.7.1"
 failure = "0.1.5"
 libc = "0.2.51"
-neli = "0.3.1"
+neli = { path = "src/neli" }
 
 [dev-dependencies]
 base64 = "0.10.1"

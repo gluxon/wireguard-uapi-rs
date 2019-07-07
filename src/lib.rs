@@ -1,6 +1,3 @@
-#[macro_use]
-mod external;
-
 mod attr;
 mod cmd;
 mod consts;

@@ -2,33 +2,16 @@ use crate::attr::{NlaNested, WgAllowedIpAttribute, WgDeviceAttribute, WgPeerAttr
 use crate::err::{ParseAttributeError, ParseDeviceError, ParseIpAddrError, ParseSockAddrError};
 use crate::get::{AllowedIp, AllowedIpBuilder, Device, DeviceBuilder, Peer, PeerBuilder};
 use libc::{in6_addr, in_addr, AF_INET, AF_INET6};
-use neli::err::NlError;
-use neli::nlattr::{AttrHandle, NlAttrHdr};
-use neli::Nl;
+use neli::nlattr::AttrHandle;
 use std::convert::TryFrom;
 use std::mem::size_of;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 use std::time::Duration;
 
-fn parse_nla_nested<T: Nl + Into<u16> + From<u16> + std::cmp::PartialEq>(
-    mut handle: AttrHandle<T>,
-) -> Result<Vec<NlAttrHdr<T>>, NlError> {
-    // The neli library provides a .iter method on handles that have been parsed. Unfortunately
-    // this is just a Vec reference slice and doesn't provide ownership. The workaround below moves
-    // the internal vector within the handle and returns it.
-    handle.parse_nested_attributes()?;
-    match handle {
-        AttrHandle::Parsed(attrs) => Ok(attrs),
-        // This case will never happen (as of neli 0.3.1). Calling parse_nested_attributes above
-        // should change the handle above into the Parsed enum kind.
-        _ => panic!("Unable to parse nested attributes."),
-    }
-}
-
 pub fn parse_device(handle: AttrHandle<WgDeviceAttribute>) -> Result<Device, ParseDeviceError> {
     let mut device_builder = DeviceBuilder::default();
 
-    for attr in parse_nla_nested(handle)? {
+    for attr in handle.iter() {
         match attr.nla_type {
             WgDeviceAttribute::Unspec => {
                 // The embeddable-wg-library example ignores unspec, so we'll do the same.
@@ -37,7 +20,7 @@ pub fn parse_device(handle: AttrHandle<WgDeviceAttribute>) -> Result<Device, Par
                 device_builder.ifindex(parse_nla_u32(&attr.payload)?);
             }
             WgDeviceAttribute::Ifname => {
-                device_builder.ifname(parse_nla_nul_string(attr.payload)?);
+                device_builder.ifname(parse_nla_nul_string(&attr.payload)?);
             }
             WgDeviceAttribute::PrivateKey => {
                 device_builder.private_key(Some(parse_device_key(&attr.payload)?));
@@ -52,7 +35,7 @@ pub fn parse_device(handle: AttrHandle<WgDeviceAttribute>) -> Result<Device, Par
                 device_builder.fwmark(parse_nla_u32(&attr.payload)?);
             }
             WgDeviceAttribute::Peers => {
-                let handle = attr.get_attr_handle::<NlaNested>();
+                let handle = attr.get_nested_attributes::<NlaNested>()?;
                 device_builder.peers(parse_peers(handle)?);
             }
             WgDeviceAttribute::Flags => {
@@ -70,8 +53,8 @@ pub fn parse_device(handle: AttrHandle<WgDeviceAttribute>) -> Result<Device, Par
 pub fn parse_peers(handle: AttrHandle<NlaNested>) -> Result<Vec<Peer>, ParseDeviceError> {
     let mut peers = vec![];
 
-    for peer in parse_nla_nested(handle)? {
-        let handle = peer.get_attr_handle::<WgPeerAttribute>();
+    for peer in handle.iter() {
+        let handle = peer.get_nested_attributes::<WgPeerAttribute>()?;
         peers.push(parse_peer(handle)?);
     }
 
@@ -81,7 +64,7 @@ pub fn parse_peers(handle: AttrHandle<NlaNested>) -> Result<Vec<Peer>, ParseDevi
 pub fn parse_peer(handle: AttrHandle<WgPeerAttribute>) -> Result<Peer, ParseDeviceError> {
     let mut peer_builder = PeerBuilder::default();
 
-    for attr in parse_nla_nested(handle)? {
+    for attr in handle.iter() {
         match attr.nla_type {
             WgPeerAttribute::Unspec => {}
             WgPeerAttribute::Flags => {}
@@ -107,7 +90,8 @@ pub fn parse_peer(handle: AttrHandle<WgPeerAttribute>) -> Result<Peer, ParseDevi
                 peer_builder.tx_bytes(parse_nla_u64(&attr.payload)?);
             }
             WgPeerAttribute::AllowedIps => {
-                peer_builder.allowed_ips(parse_allowedips(attr)?);
+                let handle = attr.get_nested_attributes::<NlaNested>()?;
+                peer_builder.allowed_ips(parse_allowedips(handle)?);
             }
             WgPeerAttribute::ProtocolVersion => {
                 peer_builder.protocol_version(parse_nla_u32(&attr.payload)?);
@@ -121,24 +105,23 @@ pub fn parse_peer(handle: AttrHandle<WgPeerAttribute>) -> Result<Peer, ParseDevi
     Ok(peer_builder.build()?)
 }
 
-pub fn parse_allowedips(
-    attr: NlAttrHdr<WgPeerAttribute>,
-) -> Result<Vec<AllowedIp>, ParseDeviceError> {
+pub fn parse_allowedips(handle: AttrHandle<NlaNested>) -> Result<Vec<AllowedIp>, ParseDeviceError> {
     let mut allowed_ips = vec![];
 
-    let handle = attr.get_attr_handle::<NlaNested>();
-    for allowed_ip in parse_nla_nested(handle)? {
-        allowed_ips.push(parse_allowedip(allowed_ip)?)
+    for allowed_ip in handle.iter() {
+        let handle = allowed_ip.get_nested_attributes::<WgAllowedIpAttribute>()?;
+        allowed_ips.push(parse_allowedip(handle)?);
     }
 
     Ok(allowed_ips)
 }
 
-pub fn parse_allowedip(attr: NlAttrHdr<NlaNested>) -> Result<AllowedIp, ParseDeviceError> {
+pub fn parse_allowedip(
+    handle: AttrHandle<WgAllowedIpAttribute>,
+) -> Result<AllowedIp, ParseDeviceError> {
     let mut allowed_ip_builder = AllowedIpBuilder::default();
 
-    let handle = attr.get_attr_handle::<WgAllowedIpAttribute>();
-    for attr in parse_nla_nested(handle)? {
+    for attr in handle.iter() {
         let payload = &attr.payload;
         match attr.nla_type {
             WgAllowedIpAttribute::Unspec => {}
@@ -205,10 +188,12 @@ pub fn parse_nla_u16_be(buf: &[u8]) -> Result<u16, ParseAttributeError> {
     Ok(u16::from_be_bytes(arr))
 }
 
-pub fn parse_nla_nul_string(mut payload: Vec<u8>) -> Result<String, ParseAttributeError> {
+pub fn parse_nla_nul_string(payload: &Vec<u8>) -> Result<String, ParseAttributeError> {
     // Although payload is a known length, a null-terminated C string is still
     // sent over netlink. We should check that this was the case before dropping
     // the last character (which should be null).
+    let mut payload = payload.to_vec();
+
     payload
         .pop()
         .filter(|char| char == &0)
@@ -299,41 +284,49 @@ pub fn parse_in6_addr(buf: &[u8]) -> Result<Ipv6Addr, ParseAttributeError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::cmd::WgCmd;
     use base64;
+    use buffering::copy::StreamReadBuffer;
     use failure;
-    use neli::nlattr::AttrHandle;
+    use neli::genl::Genlmsghdr;
+    use neli::Nl;
 
     #[test]
     fn parse_device_example_from_man_page() -> Result<(), failure::Error> {
         // This payload comes from the configuration example in "man wg", but with the third peer
         // removed since it specifies an invalid endpoint.
         let payload = vec![
-            6, 0, 6, 0, 108, 202, 0, 0, 8, 0, 7, 0, 0, 0, 0, 0, 8, 0, 1, 0, 6, 0, 0, 0, 9, 0, 2, 0,
-            116, 101, 115, 116, 0, 0, 0, 0, 36, 0, 3, 0, 200, 9, 243, 229, 49, 126, 149, 117, 201,
-            181, 237, 120, 182, 56, 183, 206, 83, 13, 171, 232, 93, 218, 182, 20, 34, 2, 65, 128,
-            29, 223, 6, 105, 36, 0, 4, 0, 28, 136, 40, 247, 19, 115, 36, 197, 139, 40, 4, 146, 134,
-            36, 234, 35, 38, 241, 103, 69, 55, 192, 98, 226, 81, 226, 117, 60, 167, 252, 202, 76,
-            192, 1, 8, 0, 216, 0, 0, 0, 36, 0, 1, 0, 197, 50, 1, 3, 154, 219, 161, 75, 231, 31,
-            136, 109, 161, 216, 219, 233, 238, 189, 237, 8, 203, 17, 27, 117, 52, 0, 120, 153, 154,
-            169, 240, 56, 36, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 6, 0, 5, 0, 0, 0, 0, 0, 12, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 0, 7, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 8, 0, 10, 0, 1, 0, 0, 0, 20, 0, 4, 0, 2, 0, 4, 210, 192, 95, 5,
-            67, 0, 0, 0, 0, 0, 0, 0, 0, 60, 0, 9, 0, 28, 0, 0, 0, 5, 0, 3, 0, 32, 0, 0, 0, 6, 0, 1,
-            0, 2, 0, 0, 0, 8, 0, 2, 0, 10, 192, 122, 3, 28, 0, 0, 0, 5, 0, 3, 0, 24, 0, 0, 0, 6, 0,
-            1, 0, 2, 0, 0, 0, 8, 0, 2, 0, 10, 192, 124, 0, 228, 0, 0, 0, 36, 0, 1, 0, 78, 179, 47,
-            74, 131, 248, 141, 132, 37, 99, 164, 72, 204, 24, 27, 178, 196, 42, 99, 123, 241, 35,
-            99, 226, 251, 46, 245, 148, 229, 150, 93, 125, 36, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 6, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 5, 0, 0, 0, 0, 0, 12, 0, 8, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 12, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 10, 0, 1, 0, 0, 0, 32, 0, 4,
-            0, 10, 0, 9, 164, 0, 0, 0, 0, 38, 7, 83, 0, 0, 96, 6, 176, 0, 0, 0, 0, 192, 95, 5, 67,
-            0, 0, 0, 0, 60, 0, 9, 0, 28, 0, 0, 0, 5, 0, 3, 0, 32, 0, 0, 0, 6, 0, 1, 0, 2, 0, 0, 0,
-            8, 0, 2, 0, 10, 192, 122, 4, 28, 0, 0, 0, 5, 0, 3, 0, 16, 0, 0, 0, 6, 0, 1, 0, 2, 0, 0,
-            0, 8, 0, 2, 0, 192, 168, 0, 0, 20, 0, 0, 0, 3, 0, 2, 0, 0, 0, 0, 0, 250, 117, 199, 159,
-            0, 0, 0, 0,
+            1, 1, 0, 0, 6, 0, 6, 0, 108, 202, 0, 0, 8, 0, 7, 0, 0, 0, 0, 0, 8, 0, 1, 0, 6, 0, 0, 0,
+            9, 0, 2, 0, 116, 101, 115, 116, 0, 0, 0, 0, 36, 0, 3, 0, 200, 9, 243, 229, 49, 126,
+            149, 117, 201, 181, 237, 120, 182, 56, 183, 206, 83, 13, 171, 232, 93, 218, 182, 20,
+            34, 2, 65, 128, 29, 223, 6, 105, 36, 0, 4, 0, 28, 136, 40, 247, 19, 115, 36, 197, 139,
+            40, 4, 146, 134, 36, 234, 35, 38, 241, 103, 69, 55, 192, 98, 226, 81, 226, 117, 60,
+            167, 252, 202, 76, 192, 1, 8, 0, 216, 0, 0, 0, 36, 0, 1, 0, 197, 50, 1, 3, 154, 219,
+            161, 75, 231, 31, 136, 109, 161, 216, 219, 233, 238, 189, 237, 8, 203, 17, 27, 117, 52,
+            0, 120, 153, 154, 169, 240, 56, 36, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 5, 0, 0, 0, 0, 0, 12, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            12, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 10, 0, 1, 0, 0, 0, 20, 0, 4, 0, 2, 0, 4,
+            210, 192, 95, 5, 67, 0, 0, 0, 0, 0, 0, 0, 0, 60, 0, 9, 0, 28, 0, 0, 0, 5, 0, 3, 0, 32,
+            0, 0, 0, 6, 0, 1, 0, 2, 0, 0, 0, 8, 0, 2, 0, 10, 192, 122, 3, 28, 0, 0, 0, 5, 0, 3, 0,
+            24, 0, 0, 0, 6, 0, 1, 0, 2, 0, 0, 0, 8, 0, 2, 0, 10, 192, 124, 0, 228, 0, 0, 0, 36, 0,
+            1, 0, 78, 179, 47, 74, 131, 248, 141, 132, 37, 99, 164, 72, 204, 24, 27, 178, 196, 42,
+            99, 123, 241, 35, 99, 226, 251, 46, 245, 148, 229, 150, 93, 125, 36, 0, 2, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            20, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 5, 0, 0, 0, 0, 0,
+            12, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 10, 0,
+            1, 0, 0, 0, 32, 0, 4, 0, 10, 0, 9, 164, 0, 0, 0, 0, 38, 7, 83, 0, 0, 96, 6, 176, 0, 0,
+            0, 0, 192, 95, 5, 67, 0, 0, 0, 0, 60, 0, 9, 0, 28, 0, 0, 0, 5, 0, 3, 0, 32, 0, 0, 0, 6,
+            0, 1, 0, 2, 0, 0, 0, 8, 0, 2, 0, 10, 192, 122, 4, 28, 0, 0, 0, 5, 0, 3, 0, 16, 0, 0, 0,
+            6, 0, 1, 0, 2, 0, 0, 0, 8, 0, 2, 0, 192, 168, 0, 0, 20, 0, 0, 0, 3, 0, 2, 0, 0, 0, 0,
+            0, 250, 117, 199, 159, 0, 0, 0, 0,
         ];
-        let device = parse_device(AttrHandle::Bin(&payload))?;
+        let genlmsghdr: Genlmsghdr<WgCmd, WgDeviceAttribute> = {
+            let mut mem = StreamReadBuffer::new(&payload);
+            mem.set_size_hint(payload.size());
+            Genlmsghdr::deserialize(&mut mem)?
+        };
+        let device = parse_device(genlmsghdr.get_attr_handle())?;
 
         assert_eq!(
             device,

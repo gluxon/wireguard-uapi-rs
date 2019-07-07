@@ -1,11 +1,19 @@
+use buffering::copy::{StreamReadBuffer, StreamWriteBuffer};
+use neli::consts::NlAttrType;
+use neli::err::{DeError, SerError};
+use neli::Nl;
+use neli::{impl_var, impl_var_base, impl_var_trait};
 use std::fmt;
+use std::mem;
 
-impl_var!(NlaNested, u16,
+impl_var_trait!(
+    NlaNested, u16, NlAttrType,
     Unspec => 0,
 );
 
 // https://github.com/WireGuard/WireGuard/blob/62b335b56cc99312ccedfa571500fbef3756a623/src/uapi/wireguard.h#L147
-impl_var!(WgDeviceAttribute, u16,
+impl_var_trait!(
+    WgDeviceAttribute, u16, NlAttrType,
     Unspec => 0,
     Ifindex => 1,
     Ifname => 2,
@@ -24,7 +32,8 @@ impl fmt::Display for WgDeviceAttribute {
 }
 
 // https://github.com/WireGuard/WireGuard/blob/62b335b56cc99312ccedfa571500fbef3756a623/src/uapi/wireguard.h#L165
-impl_var!(WgPeerAttribute, u16,
+impl_var_trait!(
+    WgPeerAttribute, u16, NlAttrType,
     Unspec => 0,
     PublicKey => 1,
     PresharedKey => 2,
@@ -45,7 +54,8 @@ impl fmt::Display for WgPeerAttribute {
 }
 
 // https://github.com/WireGuard/WireGuard/blob/62b335b56cc99312ccedfa571500fbef3756a623/src/uapi/wireguard.h#L181
-impl_var!(WgAllowedIpAttribute, u16,
+impl_var_trait!(
+    WgAllowedIpAttribute, u16, NlAttrType,
     Unspec => 0,
     Family => 1,
     IpAddr => 2,

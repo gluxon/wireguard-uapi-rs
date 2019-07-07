@@ -6,19 +6,18 @@ use crate::get;
 use crate::set;
 use crate::socket::parse::*;
 use crate::socket::NlWgMsgType;
-use libc::{IFNAMSIZ, NLMSG_ERROR};
-use neli::ffi::{CtrlCmd, GenlId, NlFamily, NlmF};
-use neli::genlhdr::GenlHdr;
-use neli::nlattr::NlAttrHdr;
-use neli::nlhdr::NlHdr;
+use libc::{IFNAMSIZ};
+use neli::Nl;
+use neli::consts::{NlFamily, Nlmsg, NlmF};
+use neli::genl::Genlmsghdr;
+use neli::nlattr::Nlattr;
+use neli::nl::Nlmsghdr;
 use neli::socket::NlSocket;
+use neli::StreamWriteBuffer;
 use std::convert::TryInto;
 
-type NlWgSocket = NlSocket<NlWgMsgType, GenlHdr<WgCmd>>;
-
 pub struct Socket {
-    sock: NlWgSocket,
-    seq: u32,
+    sock: NlSocket,
     family_id: NlWgMsgType,
 }
 
@@ -30,55 +29,56 @@ pub enum GetDeviceArg<'a> {
 impl Socket {
     pub fn connect() -> Result<Self, ConnectError> {
         let family_id = {
-            let mut nlsock = NlSocket::<GenlId, GenlHdr<CtrlCmd>>::new_genl()?;
-            nlsock
+            NlSocket::new(NlFamily::Generic, true)?
                 .resolve_genl_family(WG_GENL_NAME)
                 .map_err(|err| ConnectError::ResolveFamilyError(err))?
         };
 
-        let mut wgsock = NlWgSocket::new(NlFamily::Generic)?;
+        let track_seq = true;
+        let mut wgsock = NlSocket::new(NlFamily::Generic, track_seq)?;
 
         // Autoselect a PID
         let pid = None;
-        let groups = vec![];
+        let groups = None;
         wgsock.bind(pid, groups)?;
 
         Ok(Self {
             sock: wgsock,
-            seq: 0,
             family_id,
         })
     }
 
     pub fn get_device(&mut self, interface: GetDeviceArg) -> Result<get::Device, GetDeviceError> {
+        let mut mem = StreamWriteBuffer::new_growable(None);
         let attr = match interface {
             GetDeviceArg::Ifname(name) => {
                 Some(name.len())
                     .filter(|&len| 0 < len && len < IFNAMSIZ)
                     .ok_or_else(|| GetDeviceError::InvalidInterfaceName)?;
-                NlAttrHdr::new_str_payload(None, WgDeviceAttribute::Ifname, name)?
+                name.serialize(&mut mem)?;
+                Nlattr::new(None, WgDeviceAttribute::Ifname, mem.as_ref())?
             }
             GetDeviceArg::Ifindex(index) => {
-                NlAttrHdr::new_nl_payload(None, WgDeviceAttribute::Ifindex, index)?
+                index.serialize(&mut mem)?;
+                Nlattr::new(None, WgDeviceAttribute::Ifindex, mem.as_ref())?
             }
         };
         let genlhdr = {
             let cmd = WgCmd::GetDevice;
             let version = WG_GENL_VERSION;
             let attrs = vec![attr];
-            GenlHdr::new::<WgDeviceAttribute>(cmd, version, attrs)?
+            Genlmsghdr::new(cmd, version, attrs)?
         };
         let nlhdr = {
             let size = None;
             let nl_type = self.family_id;
             let flags = vec![NlmF::Request, NlmF::Ack, NlmF::Dump];
-            let seq = Some(self.seq);
+            let seq = None;
             let pid = None;
             let payload = genlhdr;
-            NlHdr::new(size, nl_type, flags, seq, pid, payload)
+            Nlmsghdr::new(size, nl_type, flags, seq, pid, payload)
         };
 
-        self.seq += 1;
         self.sock.send_nl(nlhdr)?;
 
         // In the future, neli will return multiple Netlink messages. We have to go through each
@@ -87,14 +87,21 @@ impl Socket {
         // payload.
         //
         // See: https://github.com/jbaublitz/neli/issues/15
-        let res = self.sock.recv_nl(None)?;
 
-        if i32::from(res.nl_type) == NLMSG_ERROR {
-            return Err(GetDeviceError::AccessError);
+        let mut iter = self.sock.iter::<Nlmsg, Genlmsghdr<WgCmd, WgDeviceAttribute>>();
+        while let Some(Ok(response)) = iter.next() {
+            println!("{:#?}", response);
+            match response.nl_type {
+                Nlmsg::Error => return Err(GetDeviceError::AccessError),
+                Nlmsg::Done => break,
+                _ => (),
+            };
+
+            let handle = response.nl_payload.get_attr_handle();
+            return Ok(parse_device(handle)?);
         }
 
-        let handle = res.nl_payload.get_attr_handle::<WgDeviceAttribute>();
-        Ok(parse_device(handle)?)
+        Err(GetDeviceError::AccessError)
     }
 
     pub fn set_device(&mut self, device: set::Device) -> Result<(), SetDeviceError> {
@@ -102,21 +109,20 @@ impl Socket {
             let cmd = WgCmd::SetDevice;
             let version = WG_GENL_VERSION;
             let attrs = (&device).try_into()?;
-            GenlHdr::new::<WgDeviceAttribute>(cmd, version, attrs)?
+            Genlmsghdr::new(cmd, version, attrs)?
         };
         let nlhdr = {
             let size = None;
             let nl_type = self.family_id;
             let flags = vec![NlmF::Request, NlmF::Ack];
-            let seq = Some(self.seq);
+            let seq = None;
             let pid = None;
             let payload = genlhdr;
-            NlHdr::new(size, nl_type, flags, seq, pid, payload)
+            Nlmsghdr::new(size, nl_type, flags, seq, pid, payload)
         };
 
-        self.seq += 1;
         self.sock.send_nl(nlhdr)?;
-        self.sock.recv_ack(None)?;
+        self.sock.recv_ack()?;
 
         Ok(())
     }

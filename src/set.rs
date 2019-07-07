@@ -1,25 +1,26 @@
 use crate::attr::{NlaNested, WgAllowedIpAttribute, WgDeviceAttribute, WgPeerAttribute};
 use neli::err::SerError;
-use neli::nlattr::NlAttrHdr;
+use neli::nlattr::Nlattr;
 use std::borrow::Cow;
 use std::convert::TryFrom;
 use std::convert::TryInto;
 use std::net::IpAddr;
 use std::net::SocketAddr;
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 #[repr(u32)]
 pub enum WgDeviceF {
     ReplacePeers = 1,
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 #[repr(u32)]
 pub enum WgPeerF {
     RemoveMe = 1,
     ReplaceAllowedIps = 2,
 }
 
+#[derive(Debug)]
 pub struct Device<'a> {
     ifindex: Option<u32>,
     ifname: Option<Cow<'a, str>>,
@@ -86,14 +87,14 @@ impl<'a> Device<'a> {
     }
 }
 
-impl<'a> TryFrom<&Device<'a>> for Vec<NlAttrHdr<WgDeviceAttribute>> {
+impl<'a> TryFrom<&Device<'a>> for Vec<Nlattr<WgDeviceAttribute, Vec<u8>>> {
     type Error = SerError;
 
     fn try_from(device: &Device) -> Result<Self, Self::Error> {
         let mut attrs = vec![];
 
         if let Some(ifindex) = device.ifindex {
-            attrs.push(NlAttrHdr::new_nl_payload(
+            attrs.push(Nlattr::new(
                 None,
                 WgDeviceAttribute::Ifindex,
                 ifindex,
@@ -101,10 +102,10 @@ impl<'a> TryFrom<&Device<'a>> for Vec<NlAttrHdr<WgDeviceAttribute>> {
         }
 
         if let Some(ifname) = &device.ifname {
-            attrs.push(NlAttrHdr::new_str_payload(
+            attrs.push(Nlattr::new(
                 None,
                 WgDeviceAttribute::Ifname,
-                ifname,
+                ifname.as_ref(),
             )?);
         }
 
@@ -112,7 +113,7 @@ impl<'a> TryFrom<&Device<'a>> for Vec<NlAttrHdr<WgDeviceAttribute>> {
             let mut unique = device.flags.clone();
             unique.dedup();
 
-            attrs.push(NlAttrHdr::new_nl_payload(
+            attrs.push(Nlattr::new(
                 None,
                 WgDeviceAttribute::Flags,
                 unique.drain(..).map(|flag| flag as u32).sum::<u32>(),
@@ -120,7 +121,7 @@ impl<'a> TryFrom<&Device<'a>> for Vec<NlAttrHdr<WgDeviceAttribute>> {
         }
 
         if let Some(private_key) = device.private_key {
-            attrs.push(NlAttrHdr::new_nl_payload(
+            attrs.push(Nlattr::new(
                 None,
                 WgDeviceAttribute::PrivateKey,
                 &private_key[..],
@@ -128,16 +129,16 @@ impl<'a> TryFrom<&Device<'a>> for Vec<NlAttrHdr<WgDeviceAttribute>> {
         }
 
         if let Some(listen_port) = device.listen_port {
-            attrs.push(NlAttrHdr::new_binary_payload(
+            attrs.push(Nlattr::new(
                 Some(6),
                 WgDeviceAttribute::ListenPort,
                 // neli 0.3.1 does not pad. Add 2 bytes to meet required 4 byte boundary.
                 [listen_port.to_ne_bytes(), [0u8; 2]].concat(),
-            ));
+            )?);
         }
 
         if let Some(fwmark) = device.fwmark {
-            attrs.push(NlAttrHdr::new_nl_payload(
+            attrs.push(Nlattr::new(
                 None,
                 WgDeviceAttribute::Fwmark,
                 fwmark,
@@ -145,26 +146,19 @@ impl<'a> TryFrom<&Device<'a>> for Vec<NlAttrHdr<WgDeviceAttribute>> {
         }
 
         if device.peers.len() > 0 {
-            let peer_attrs = device
-                .peers
-                .iter()
-                .map(|peer| {
-                    peer.try_into()
-                        .and_then(|peer| NlAttrHdr::new_nested(None, NlaNested::Unspec, peer))
-                })
-                .collect::<Result<Vec<NlAttrHdr<NlaNested>>, SerError>>()?;
+            let mut nested = Nlattr::new::<Vec<u8>>(None, WgDeviceAttribute::Peers, vec![])?;
+            for peer in device.peers.iter() {
+                nested.add_nested_attribute(peer.try_into()?)?;
+            }
 
-            attrs.push(NlAttrHdr::new_nested(
-                None,
-                WgDeviceAttribute::Peers,
-                peer_attrs,
-            )?);
+            attrs.push(nested);
         }
 
         Ok(attrs)
     }
 }
 
+#[derive(Debug)]
 pub struct Peer<'a> {
     pub public_key: &'a [u8; 32],
     pub flags: Vec<WgPeerF>,
@@ -223,40 +217,37 @@ impl<'a> Peer<'a> {
     }
 }
 
-impl<'a> TryFrom<&Peer<'a>> for Vec<NlAttrHdr<WgPeerAttribute>> {
+impl<'a> TryFrom<&Peer<'a>> for Nlattr<NlaNested, Vec<u8>> {
     type Error = SerError;
 
     fn try_from(peer: &Peer) -> Result<Self, Self::Error> {
-        let mut attrs = vec![];
+        let mut nested = Nlattr::new::<Vec<u8>>(None, NlaNested::Unspec, vec![])?;
 
-        attrs.push(NlAttrHdr::new_nl_payload(
-            None,
-            WgPeerAttribute::PublicKey,
-            &peer.public_key[..],
-        )?);
+        let public_key = Nlattr::new(None, WgPeerAttribute::PublicKey, peer.public_key.to_vec())?;
+        nested.add_nested_attribute(public_key)?;
 
         if peer.flags.len() > 0 {
             let mut unique = peer.flags.clone();
             unique.dedup();
 
-            attrs.push(NlAttrHdr::new_nl_payload(
+            nested.add_nested_attribute(Nlattr::new(
                 None,
                 WgPeerAttribute::Flags,
                 unique.drain(..).map(|flag| flag as u32).sum::<u32>(),
-            )?);
+            )?)?;
         }
 
         if let Some(preshared_key) = peer.preshared_key {
-            attrs.push(NlAttrHdr::new_nl_payload(
+            nested.add_nested_attribute(Nlattr::new(
                 None,
                 WgPeerAttribute::PresharedKey,
                 &preshared_key[..],
-            )?);
+            )?)?;
         }
 
         if let Some(endpoint) = peer.endpoint {
             // Using the serialize trait from serde might be easier.
-            let mut payload = vec![];
+            let mut payload: Vec<u8> = vec![];
 
             let family = match endpoint {
                 SocketAddr::V4(_) => (libc::AF_INET as u16).to_ne_bytes(),
@@ -279,52 +270,44 @@ impl<'a> TryFrom<&Peer<'a>> for Vec<NlAttrHdr<WgPeerAttribute>> {
                 }
             };
 
-            attrs.push(NlAttrHdr::new_binary_payload(
-                None,
-                WgPeerAttribute::Endpoint,
-                payload,
-            ));
+            nested.add_nested_attribute(Nlattr::new(None, WgPeerAttribute::Endpoint, payload)?)?;
         }
 
         if let Some(persistent_keepalive_interval) = peer.persistent_keepalive_interval {
-            attrs.push(NlAttrHdr::new_nl_payload(
+            nested.add_nested_attribute(Nlattr::new(
                 Some(6),
                 WgPeerAttribute::PersistentKeepaliveInterval,
                 // neli 0.3.1 does not pad. Add 2 bytes to meet required 4 byte boundary.
                 [persistent_keepalive_interval.to_ne_bytes(), [0u8; 2]].concat(),
-            )?);
+            )?)?;
         }
 
         if peer.allowed_ips.len() > 0 {
-            let allowed_ips_attr = peer
-                .allowed_ips
-                .iter()
-                .map(|allowed_ip| {
-                    allowed_ip.try_into().and_then(|allowed_ip| {
-                        NlAttrHdr::new_nested(None, NlaNested::Unspec, allowed_ip)
-                    })
-                })
-                .collect::<Result<Vec<NlAttrHdr<NlaNested>>, SerError>>()?;
-
-            attrs.push(NlAttrHdr::new_nested(
+            let mut allowed_ips_attribute = Nlattr::new::<Vec<u8>>(
                 None,
                 WgPeerAttribute::AllowedIps,
-                allowed_ips_attr,
-            )?);
+                vec![],
+            )?;
+            for allowed_ip in peer.allowed_ips.iter() {
+                allowed_ips_attribute.add_nested_attribute(allowed_ip.try_into()?)?;
+            }
+
+            nested.add_nested_attribute(allowed_ips_attribute)?;
         }
 
         if let Some(protocol_version) = peer.protocol_version {
-            attrs.push(NlAttrHdr::new_nl_payload(
+            nested.add_nested_attribute(Nlattr::new(
                 None,
                 WgPeerAttribute::ProtocolVersion,
                 protocol_version,
-            )?);
+            )?)?;
         }
 
-        Ok(attrs)
+        Ok(nested)
     }
 }
 
+#[derive(Debug)]
 pub struct AllowedIp<'a> {
     pub ipaddr: &'a IpAddr,
     pub cidr_mask: Option<u8>,
@@ -339,44 +322,44 @@ impl<'a> AllowedIp<'a> {
     }
 }
 
-impl<'a> TryFrom<&AllowedIp<'a>> for Vec<NlAttrHdr<WgAllowedIpAttribute>> {
+impl<'a> TryFrom<&AllowedIp<'a>> for Nlattr<NlaNested, Vec<u8>> {
     type Error = SerError;
 
     fn try_from(allowed_ip: &AllowedIp) -> Result<Self, Self::Error> {
-        let mut attrs = vec![];
+        let mut nested = Nlattr::new::<Vec<u8>>(None, NlaNested::Unspec, vec![])?;
 
         let family = match allowed_ip.ipaddr {
             IpAddr::V4(_) => libc::AF_INET as u16,
             IpAddr::V6(_) => libc::AF_INET6 as u16,
         };
-        attrs.push(NlAttrHdr::new_nl_payload(
+        nested.add_nested_attribute(Nlattr::new(
             None,
             WgAllowedIpAttribute::Family,
             // neli 0.3.1 does not pad. Add 2 bytes to meet required 4 byte boundary.
             [family.to_ne_bytes(), [0u8; 2]].concat(),
-        )?);
+        )?)?;
 
         let ipaddr = match allowed_ip.ipaddr {
             IpAddr::V4(addr) => addr.octets().to_vec(),
             IpAddr::V6(addr) => addr.octets().to_vec(),
         };
-        attrs.push(NlAttrHdr::new_binary_payload(
+        nested.add_nested_attribute(Nlattr::new(
             None,
             WgAllowedIpAttribute::IpAddr,
             ipaddr,
-        ));
+        )?)?;
 
         let cidr_mask = allowed_ip.cidr_mask.unwrap_or(match allowed_ip.ipaddr {
             IpAddr::V4(_) => 32,
             IpAddr::V6(_) => 128,
         });
-        attrs.push(NlAttrHdr::new_nl_payload(
+        nested.add_nested_attribute(Nlattr::new(
             Some(5),
             WgAllowedIpAttribute::CidrMask,
             // neli 0.3.1 does not pad. Add 3 bytes to meet required 4 byte boundary.
             [&cidr_mask.to_ne_bytes()[..], &[0u8; 3][..]].concat(),
-        )?);
+        )?)?;
 
-        Ok(attrs)
+        Ok(nested)
     }
 }
