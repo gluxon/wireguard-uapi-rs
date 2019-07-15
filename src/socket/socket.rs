@@ -90,7 +90,6 @@ impl Socket {
 
         let mut iter = self.sock.iter::<Nlmsg, Genlmsghdr<WgCmd, WgDeviceAttribute>>();
         while let Some(Ok(response)) = iter.next() {
-            println!("{:#?}", response);
             match response.nl_type {
                 Nlmsg::Error => return Err(GetDeviceError::AccessError),
                 Nlmsg::Done => break,
