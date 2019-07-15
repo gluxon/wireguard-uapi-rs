@@ -13,7 +13,7 @@ fn parse_device_key(buf: &[u8]) -> [u8; 32] {
     key
 }
 
-fn create_set_allowed_ips(allowed_ips: &Vec<get::AllowedIp>) -> Vec<set::AllowedIp> {
+fn create_set_allowed_ips(allowed_ips: &[get::AllowedIp]) -> Vec<set::AllowedIp> {
     allowed_ips
         .iter()
         .map(|allowed_ip| set::AllowedIp {

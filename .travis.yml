@@ -13,14 +13,36 @@ addons:
       - linux-headers-$(uname -r)
       - wireguard
 
-before_install:
-  - sudo ip link add wgtest0 type wireguard
-  - sudo ip link add wgtest12 type wireguard
+stages:
+  - build
+  - lint
+  - test
 
-script:
-  - cargo build --verbose
-  - cargo build --tests --verbose
-  # Give compiled tests the ability to set and read WireGuard devices. Otherwise
-  # they will likely fail with access/permission errors.
-  - find ./target/debug -maxdepth 1 -type f -executable | xargs -n 1 sudo setcap CAP_NET_ADMIN=+eip
-  - cargo test --verbose
+jobs:
+  include:
+
+    - stage: build
+      script:
+        - cargo build --verbose
+
+    - stage: lint
+      name: Clippy
+      script:
+        - rustup component add clippy
+        - cargo clippy --all-targets --all-features
+
+    - stage: lint
+      name: rustfmt
+      script:
+        - rustup component add rustfmt
+        - cargo fmt --all -- --check
+
+    - stage: test
+      script:
+        - sudo ip link add wgtest0 type wireguard
+        - sudo ip link add wgtest12 type wireguard
+        - cargo build --tests --verbose
+        # Give compiled tests the ability to set and read WireGuard devices. Otherwise
+        # they will likely fail with access/permission errors.
+        - find ./target/debug -maxdepth 1 -type f -executable | xargs -n 1 sudo setcap CAP_NET_ADMIN=+eip
+        - cargo test --verbose

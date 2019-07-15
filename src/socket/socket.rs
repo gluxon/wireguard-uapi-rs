@@ -6,13 +6,13 @@ use crate::get;
 use crate::set;
 use crate::socket::parse::*;
 use crate::socket::NlWgMsgType;
-use libc::{IFNAMSIZ};
-use neli::Nl;
-use neli::consts::{NlFamily, Nlmsg, NlmF};
+use libc::IFNAMSIZ;
+use neli::consts::{NlFamily, NlmF, Nlmsg};
 use neli::genl::Genlmsghdr;
-use neli::nlattr::Nlattr;
 use neli::nl::Nlmsghdr;
+use neli::nlattr::Nlattr;
 use neli::socket::NlSocket;
+use neli::Nl;
 use neli::StreamWriteBuffer;
 use std::convert::TryInto;
 
@@ -31,7 +31,7 @@ impl Socket {
         let family_id = {
             NlSocket::new(NlFamily::Generic, true)?
                 .resolve_genl_family(WG_GENL_NAME)
-                .map_err(|err| ConnectError::ResolveFamilyError(err))?
+                .map_err(ConnectError::ResolveFamilyError)?
         };
 
         let track_seq = true;
@@ -88,7 +88,13 @@ impl Socket {
         //
         // See: https://github.com/jbaublitz/neli/issues/15
 
-        let mut iter = self.sock.iter::<Nlmsg, Genlmsghdr<WgCmd, WgDeviceAttribute>>();
+        let mut iter = self
+            .sock
+            .iter::<Nlmsg, Genlmsghdr<WgCmd, WgDeviceAttribute>>();
+
+        // Remove the following clippy flag after issue #1 is closed
+        // https://github.com/gluxon/wireguard-uapi-rs/issues/1
+        #[allow(clippy::never_loop)]
         while let Some(Ok(response)) = iter.next() {
             match response.nl_type {
                 Nlmsg::Error => return Err(GetDeviceError::AccessError),

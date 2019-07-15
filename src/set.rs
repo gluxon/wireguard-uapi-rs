@@ -94,11 +94,7 @@ impl<'a> TryFrom<&Device<'a>> for Vec<Nlattr<WgDeviceAttribute, Vec<u8>>> {
         let mut attrs = vec![];
 
         if let Some(ifindex) = device.ifindex {
-            attrs.push(Nlattr::new(
-                None,
-                WgDeviceAttribute::Ifindex,
-                ifindex,
-            )?);
+            attrs.push(Nlattr::new(None, WgDeviceAttribute::Ifindex, ifindex)?);
         }
 
         if let Some(ifname) = &device.ifname {
@@ -109,7 +105,7 @@ impl<'a> TryFrom<&Device<'a>> for Vec<Nlattr<WgDeviceAttribute, Vec<u8>>> {
             )?);
         }
 
-        if device.flags.len() > 0 {
+        if !device.flags.is_empty() {
             let mut unique = device.flags.clone();
             unique.dedup();
 
@@ -138,14 +134,10 @@ impl<'a> TryFrom<&Device<'a>> for Vec<Nlattr<WgDeviceAttribute, Vec<u8>>> {
         }
 
         if let Some(fwmark) = device.fwmark {
-            attrs.push(Nlattr::new(
-                None,
-                WgDeviceAttribute::Fwmark,
-                fwmark,
-            )?);
+            attrs.push(Nlattr::new(None, WgDeviceAttribute::Fwmark, fwmark)?);
         }
 
-        if device.peers.len() > 0 {
+        if !device.peers.is_empty() {
             let mut nested = Nlattr::new::<Vec<u8>>(None, WgDeviceAttribute::Peers, vec![])?;
             for peer in device.peers.iter() {
                 nested.add_nested_attribute(&peer.try_into()?)?;
@@ -226,7 +218,7 @@ impl<'a> TryFrom<&Peer<'a>> for Nlattr<NlaNested, Vec<u8>> {
         let public_key = Nlattr::new(None, WgPeerAttribute::PublicKey, peer.public_key.to_vec())?;
         nested.add_nested_attribute(&public_key)?;
 
-        if peer.flags.len() > 0 {
+        if !peer.flags.is_empty() {
             let mut unique = peer.flags.clone();
             unique.dedup();
 
@@ -282,12 +274,9 @@ impl<'a> TryFrom<&Peer<'a>> for Nlattr<NlaNested, Vec<u8>> {
             )?)?;
         }
 
-        if peer.allowed_ips.len() > 0 {
-            let mut allowed_ips_attribute = Nlattr::new::<Vec<u8>>(
-                None,
-                WgPeerAttribute::AllowedIps,
-                vec![],
-            )?;
+        if !peer.allowed_ips.is_empty() {
+            let mut allowed_ips_attribute =
+                Nlattr::new::<Vec<u8>>(None, WgPeerAttribute::AllowedIps, vec![])?;
             for allowed_ip in peer.allowed_ips.iter() {
                 allowed_ips_attribute.add_nested_attribute(&allowed_ip.try_into()?)?;
             }
@@ -343,11 +332,7 @@ impl<'a> TryFrom<&AllowedIp<'a>> for Nlattr<NlaNested, Vec<u8>> {
             IpAddr::V4(addr) => addr.octets().to_vec(),
             IpAddr::V6(addr) => addr.octets().to_vec(),
         };
-        nested.add_nested_attribute(&Nlattr::new(
-            None,
-            WgAllowedIpAttribute::IpAddr,
-            ipaddr,
-        )?)?;
+        nested.add_nested_attribute(&Nlattr::new(None, WgAllowedIpAttribute::IpAddr, ipaddr)?)?;
 
         let cidr_mask = allowed_ip.cidr_mask.unwrap_or(match allowed_ip.ipaddr {
             IpAddr::V4(_) => 32,

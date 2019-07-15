@@ -188,7 +188,7 @@ pub fn parse_nla_u16_be(buf: &[u8]) -> Result<u16, ParseAttributeError> {
     Ok(u16::from_be_bytes(arr))
 }
 
-pub fn parse_nla_nul_string(payload: &Vec<u8>) -> Result<String, ParseAttributeError> {
+pub fn parse_nla_nul_string(payload: &[u8]) -> Result<String, ParseAttributeError> {
     // Although payload is a known length, a null-terminated C string is still
     // sent over netlink. We should check that this was the case before dropping
     // the last character (which should be null).
