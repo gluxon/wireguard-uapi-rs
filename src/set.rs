@@ -148,7 +148,7 @@ impl<'a> TryFrom<&Device<'a>> for Vec<Nlattr<WgDeviceAttribute, Vec<u8>>> {
         if device.peers.len() > 0 {
             let mut nested = Nlattr::new::<Vec<u8>>(None, WgDeviceAttribute::Peers, vec![])?;
             for peer in device.peers.iter() {
-                nested.add_nested_attribute(peer.try_into()?)?;
+                nested.add_nested_attribute(&peer.try_into()?)?;
             }
 
             attrs.push(nested);
@@ -224,13 +224,13 @@ impl<'a> TryFrom<&Peer<'a>> for Nlattr<NlaNested, Vec<u8>> {
         let mut nested = Nlattr::new::<Vec<u8>>(None, NlaNested::Unspec, vec![])?;
 
         let public_key = Nlattr::new(None, WgPeerAttribute::PublicKey, peer.public_key.to_vec())?;
-        nested.add_nested_attribute(public_key)?;
+        nested.add_nested_attribute(&public_key)?;
 
         if peer.flags.len() > 0 {
             let mut unique = peer.flags.clone();
             unique.dedup();
 
-            nested.add_nested_attribute(Nlattr::new(
+            nested.add_nested_attribute(&Nlattr::new(
                 None,
                 WgPeerAttribute::Flags,
                 unique.drain(..).map(|flag| flag as u32).sum::<u32>(),
@@ -238,7 +238,7 @@ impl<'a> TryFrom<&Peer<'a>> for Nlattr<NlaNested, Vec<u8>> {
         }
 
         if let Some(preshared_key) = peer.preshared_key {
-            nested.add_nested_attribute(Nlattr::new(
+            nested.add_nested_attribute(&Nlattr::new(
                 None,
                 WgPeerAttribute::PresharedKey,
                 &preshared_key[..],
@@ -270,11 +270,11 @@ impl<'a> TryFrom<&Peer<'a>> for Nlattr<NlaNested, Vec<u8>> {
                 }
             };
 
-            nested.add_nested_attribute(Nlattr::new(None, WgPeerAttribute::Endpoint, payload)?)?;
+            nested.add_nested_attribute(&Nlattr::new(None, WgPeerAttribute::Endpoint, payload)?)?;
         }
 
         if let Some(persistent_keepalive_interval) = peer.persistent_keepalive_interval {
-            nested.add_nested_attribute(Nlattr::new(
+            nested.add_nested_attribute(&Nlattr::new(
                 Some(6),
                 WgPeerAttribute::PersistentKeepaliveInterval,
                 // neli 0.3.1 does not pad. Add 2 bytes to meet required 4 byte boundary.
@@ -289,14 +289,14 @@ impl<'a> TryFrom<&Peer<'a>> for Nlattr<NlaNested, Vec<u8>> {
                 vec![],
             )?;
             for allowed_ip in peer.allowed_ips.iter() {
-                allowed_ips_attribute.add_nested_attribute(allowed_ip.try_into()?)?;
+                allowed_ips_attribute.add_nested_attribute(&allowed_ip.try_into()?)?;
             }
 
-            nested.add_nested_attribute(allowed_ips_attribute)?;
+            nested.add_nested_attribute(&allowed_ips_attribute)?;
         }
 
         if let Some(protocol_version) = peer.protocol_version {
-            nested.add_nested_attribute(Nlattr::new(
+            nested.add_nested_attribute(&Nlattr::new(
                 None,
                 WgPeerAttribute::ProtocolVersion,
                 protocol_version,
@@ -332,7 +332,7 @@ impl<'a> TryFrom<&AllowedIp<'a>> for Nlattr<NlaNested, Vec<u8>> {
             IpAddr::V4(_) => libc::AF_INET as u16,
             IpAddr::V6(_) => libc::AF_INET6 as u16,
         };
-        nested.add_nested_attribute(Nlattr::new(
+        nested.add_nested_attribute(&Nlattr::new(
             None,
             WgAllowedIpAttribute::Family,
             // neli 0.3.1 does not pad. Add 2 bytes to meet required 4 byte boundary.
@@ -343,7 +343,7 @@ impl<'a> TryFrom<&AllowedIp<'a>> for Nlattr<NlaNested, Vec<u8>> {
             IpAddr::V4(addr) => addr.octets().to_vec(),
             IpAddr::V6(addr) => addr.octets().to_vec(),
         };
-        nested.add_nested_attribute(Nlattr::new(
+        nested.add_nested_attribute(&Nlattr::new(
             None,
             WgAllowedIpAttribute::IpAddr,
             ipaddr,
@@ -353,7 +353,7 @@ impl<'a> TryFrom<&AllowedIp<'a>> for Nlattr<NlaNested, Vec<u8>> {
             IpAddr::V4(_) => 32,
             IpAddr::V6(_) => 128,
         });
-        nested.add_nested_attribute(Nlattr::new(
+        nested.add_nested_attribute(&Nlattr::new(
             Some(5),
             WgAllowedIpAttribute::CidrMask,
             // neli 0.3.1 does not pad. Add 3 bytes to meet required 4 byte boundary.
