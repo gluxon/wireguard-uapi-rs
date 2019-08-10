@@ -92,9 +92,7 @@ impl Socket {
             .sock
             .iter::<Nlmsg, Genlmsghdr<WgCmd, WgDeviceAttribute>>();
 
-        // Remove the following clippy flag after issue #1 is closed
-        // https://github.com/gluxon/wireguard-uapi-rs/issues/1
-        #[allow(clippy::never_loop)]
+        let mut device = None;
         while let Some(Ok(response)) = iter.next() {
             match response.nl_type {
                 Nlmsg::Error => return Err(GetDeviceError::AccessError),
@@ -103,10 +101,13 @@ impl Socket {
             };
 
             let handle = response.nl_payload.get_attr_handle();
-            return Ok(parse_device(handle)?);
+            device = Some(match device {
+                Some(device) => extend_device(device, handle)?,
+                None => parse_device(handle)?,
+            });
         }
 
-        Err(GetDeviceError::AccessError)
+        device.ok_or(GetDeviceError::AccessError)
     }
 
     pub fn set_device(&mut self, device: set::Device) -> Result<(), SetDeviceError> {

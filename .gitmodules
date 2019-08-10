@@ -1,0 +1,3 @@
+[submodule "src/neli"]
+	path = src/neli
+	url = https://github.com/jbaublitz/neli

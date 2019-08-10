@@ -18,6 +18,9 @@ pub struct Device {
 
 #[derive(Builder, Clone, Debug, PartialEq)]
 pub struct Peer {
+    // The public_key and allowed_ips fields are public to
+    // make peer coalescing easier.
+    #[builder(field(public))]
     pub public_key: [u8; 32],
     pub preshared_key: [u8; 32],
     #[builder(default)]
@@ -26,7 +29,7 @@ pub struct Peer {
     pub last_handshake_time: Duration,
     pub rx_bytes: u64,
     pub tx_bytes: u64,
-    #[builder(default)]
+    #[builder(default, field(public))]
     pub allowed_ips: Vec<AllowedIp>,
     pub protocol_version: u32,
 }

@@ -29,7 +29,13 @@ jobs:
       name: Clippy
       script:
         - rustup component add clippy
+        # Move neli out of the src dir to skip clippy checks on it
+        - temp=$(mktemp -d)
+        - mv src/neli "$temp/"
+        - sed -i 's|neli = { path = "src/neli" }|neli = "0.4.3-r1"|' Cargo.toml
         - cargo clippy --all-targets --all-features
+        - sed -i 's|neli = "0.4.3-r1"|neli = { path = "src/neli" }|' Cargo.toml
+        - mv "$temp/neli" src
 
     - stage: lint
       name: rustfmt
