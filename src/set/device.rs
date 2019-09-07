@@ -1,10 +1,5 @@
-use crate::attr::WgDeviceAttribute;
-use crate::set::{Peer, PeerFragment};
-use neli::err::SerError;
-use neli::nlattr::Nlattr;
+use crate::set::Peer;
 use std::borrow::Cow;
-use std::convert::TryFrom;
-use std::convert::TryInto;
 
 #[derive(Clone, Debug, PartialEq)]
 #[repr(u32)]
@@ -14,8 +9,8 @@ pub enum WgDeviceF {
 
 #[derive(Debug)]
 pub struct Device<'a> {
-    ifindex: Option<u32>,
-    ifname: Option<Cow<'a, str>>,
+    pub(super) ifindex: Option<u32>,
+    pub(super) ifname: Option<Cow<'a, str>>,
     /// 0 or WGDEVICE_F_REPLACE_PEERS if all current peers should be removed prior to adding the
     // list below.
     pub flags: Vec<WgDeviceF>,
@@ -76,69 +71,5 @@ impl<'a> Device<'a> {
     pub fn peers(mut self, peers: Vec<Peer<'a>>) -> Self {
         self.peers = peers;
         self
-    }
-}
-
-impl<'a> TryFrom<&Device<'a>> for Vec<Nlattr<WgDeviceAttribute, Vec<u8>>> {
-    type Error = SerError;
-
-    fn try_from(device: &Device) -> Result<Self, Self::Error> {
-        let mut attrs = vec![];
-
-        if let Some(ifindex) = device.ifindex {
-            attrs.push(Nlattr::new(None, WgDeviceAttribute::Ifindex, ifindex)?);
-        }
-
-        if let Some(ifname) = &device.ifname {
-            attrs.push(Nlattr::new(
-                None,
-                WgDeviceAttribute::Ifname,
-                ifname.as_ref(),
-            )?);
-        }
-
-        if !device.flags.is_empty() {
-            let mut unique = device.flags.clone();
-            unique.dedup();
-
-            attrs.push(Nlattr::new(
-                None,
-                WgDeviceAttribute::Flags,
-                unique.drain(..).map(|flag| flag as u32).sum::<u32>(),
-            )?);
-        }
-
-        if let Some(private_key) = device.private_key {
-            attrs.push(Nlattr::new(
-                None,
-                WgDeviceAttribute::PrivateKey,
-                &private_key[..],
-            )?);
-        }
-
-        if let Some(listen_port) = device.listen_port {
-            attrs.push(Nlattr::new(
-                Some(6),
-                WgDeviceAttribute::ListenPort,
-                // neli 0.3.1 does not pad. Add 2 bytes to meet required 4 byte boundary.
-                [listen_port.to_ne_bytes(), [0u8; 2]].concat(),
-            )?);
-        }
-
-        if let Some(fwmark) = device.fwmark {
-            attrs.push(Nlattr::new(None, WgDeviceAttribute::Fwmark, fwmark)?);
-        }
-
-        if !device.peers.is_empty() {
-            let mut nested = Nlattr::new::<Vec<u8>>(None, WgDeviceAttribute::Peers, vec![])?;
-            for peer in device.peers.iter() {
-                let attr = (&PeerFragment::First(&peer)).try_into()?;
-                nested.add_nested_attribute(&attr)?;
-            }
-
-            attrs.push(nested);
-        }
-
-        Ok(attrs)
     }
 }

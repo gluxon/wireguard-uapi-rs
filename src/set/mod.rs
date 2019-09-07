@@ -2,6 +2,8 @@ mod allowed_ip;
 pub use allowed_ip::AllowedIp;
 mod device;
 pub use device::{Device, WgDeviceF};
+mod device_fragment;
+pub(crate) use device_fragment::DeviceFragment;
 mod peer;
 pub use peer::{Peer, WgPeerF};
 mod peer_fragment;

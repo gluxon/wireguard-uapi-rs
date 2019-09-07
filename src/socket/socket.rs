@@ -114,7 +114,7 @@ impl Socket {
         let genlhdr = {
             let cmd = WgCmd::SetDevice;
             let version = WG_GENL_VERSION;
-            let attrs = (&device).try_into()?;
+            let attrs = (&set::DeviceFragment::First(&device)).try_into()?;
             Genlmsghdr::new(cmd, version, attrs)?
         };
         let nlhdr = {
