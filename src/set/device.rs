@@ -1,5 +1,5 @@
 use crate::attr::WgDeviceAttribute;
-use crate::set::Peer;
+use crate::set::{Peer, PeerFragment};
 use neli::err::SerError;
 use neli::nlattr::Nlattr;
 use std::borrow::Cow;
@@ -132,7 +132,8 @@ impl<'a> TryFrom<&Device<'a>> for Vec<Nlattr<WgDeviceAttribute, Vec<u8>>> {
         if !device.peers.is_empty() {
             let mut nested = Nlattr::new::<Vec<u8>>(None, WgDeviceAttribute::Peers, vec![])?;
             for peer in device.peers.iter() {
-                nested.add_nested_attribute(&peer.try_into()?)?;
+                let attr = (&PeerFragment::First(&peer)).try_into()?;
+                nested.add_nested_attribute(&attr)?;
             }
 
             attrs.push(nested);
