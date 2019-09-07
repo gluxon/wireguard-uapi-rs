@@ -1,14 +1,13 @@
-use buffering::copy::{StreamReadBuffer, StreamWriteBuffer};
 use neli::consts::NlAttrType;
-use neli::err::{DeError, SerError};
-use neli::Nl;
 use neli::{impl_var, impl_var_base, impl_var_trait};
 use std::fmt;
-use std::mem;
 
 impl_var_trait!(
     NlaNested, u16, NlAttrType,
     Unspec => 0,
+    // neli requires 1 non-zero argument even though WireGuard
+    // does not use it.
+    Unused => 1
 );
 
 // https://github.com/WireGuard/WireGuard/blob/62b335b56cc99312ccedfa571500fbef3756a623/src/uapi/wireguard.h#L147
