@@ -2,6 +2,7 @@ use base64;
 use failure;
 use libc;
 use rand;
+use std::net::{IpAddr, Ipv6Addr};
 use std::time::Duration;
 use wireguard_uapi;
 use wireguard_uapi::socket::{GetDeviceArg, Socket};
@@ -135,6 +136,71 @@ fn set_ifname_has_proper_padding() -> Result<(), failure::Error> {
     // If ifname wasn't properly padded, the listen_port won't be properly set. Check that it is
     // properly set as a rough measure that ifname was properly padded.
     assert_eq!(listen_port, response_device.listen_port);
+
+    Ok(())
+}
+
+#[test]
+fn large_peer() -> Result<(), failure::Error> {
+    let mut test_device = get::Device {
+        ifindex: 6,
+        ifname: "wgtest0".to_string(),
+        private_key: Some(parse_device_key(&base64::decode(
+            "yAnz5TF+lXXJte14tji3zlMNq+hd2rYUIgJBgB3fBmk=",
+        )?)),
+        public_key: Some(parse_device_key(&base64::decode(
+            "HIgo9xNzJMWLKASShiTqIybxZ0U3wGLiUeJ1PKf8ykw=",
+        )?)),
+        listen_port: 51820,
+        fwmark: 0,
+        peers: vec![get::Peer {
+            public_key: parse_device_key(&base64::decode(
+                "xTIBA5rboUvnH4htodjb6e697QjLERt1NAB4mZqp8Dg=",
+            )?),
+            preshared_key: [0u8; 32],
+            endpoint: Some("192.95.5.67:1234".parse()?),
+            persistent_keepalive_interval: 0,
+            last_handshake_time: Duration::new(0, 0),
+            rx_bytes: 0,
+            tx_bytes: 0,
+            allowed_ips: (1..=2u16.pow(12))
+                .step_by(1)
+                .map(|i| get::AllowedIp {
+                    family: libc::AF_INET6 as u16,
+                    ipaddr: IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, i / 256, i % 256)),
+                    cidr_mask: 128,
+                })
+                .collect(),
+            protocol_version: 1,
+        }],
+    };
+
+    let response_device = {
+        let mut wg = Socket::connect()?;
+
+        let set_device_args = {
+            let peer = set::Peer::from_public_key(&test_device.peers[0].public_key)
+                .preshared_key(&test_device.peers[0].preshared_key)
+                .endpoint(test_device.peers[0].endpoint.as_ref().unwrap())
+                .persistent_keepalive_interval(test_device.peers[0].persistent_keepalive_interval)
+                .allowed_ips(create_set_allowed_ips(&test_device.peers[0].allowed_ips));
+
+            set::Device::from_ifname(&test_device.ifname)
+                .private_key(test_device.private_key.as_ref().unwrap())
+                .listen_port(test_device.listen_port)
+                .flags(vec![set::WgDeviceF::ReplacePeers])
+                .peers(vec![peer])
+        };
+
+        wg.set_device(set_device_args)?;
+        wg.get_device(GetDeviceArg::Ifname(&test_device.ifname))?
+    };
+
+    // The ifindex can't be determined before response_device is set. So we'll just copy over the
+    // newly generated index before testing that what we sent matches what was returned.
+    test_device.ifindex = response_device.ifindex;
+
+    assert_eq!(test_device, response_device);
 
     Ok(())
 }
