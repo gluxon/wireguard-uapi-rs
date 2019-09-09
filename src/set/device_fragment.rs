@@ -1,3 +1,4 @@
+use super::Fragment;
 use crate::attr::WgDeviceAttribute;
 use crate::set::{Device, Peer, PeerFragment};
 use neli::err::SerError;
@@ -8,8 +9,8 @@ use std::convert::TryInto;
 
 #[derive(Debug)]
 pub enum DeviceFragment<'a> {
-    First(&'a Device<'a>),
-    Following(&'a DeviceFragmentFollowing<'a>),
+    First(&'a mut Device<'a>),
+    Following(&'a mut DeviceFragmentFollowing<'a>),
 }
 
 #[derive(Debug)]
@@ -17,6 +18,21 @@ pub struct DeviceFragmentFollowing<'a> {
     pub ifindex: Option<u32>,
     pub ifname: Option<Cow<'a, str>>,
     pub peers: Vec<Peer<'a>>,
+}
+
+impl<'a> DeviceFragment<'a> {
+    pub fn add_peer(&mut self, peer: Peer<'a>) {
+        match self {
+            DeviceFragment::First(ref mut first) => first.peers.push(peer),
+            DeviceFragment::Following(ref mut following) => following.peers.push(peer),
+        };
+    }
+}
+
+impl<'a> DeviceFragmentFollowing<'a> {
+    pub fn add_peer(&mut self, peer: Peer<'a>) {
+        self.peers.push(peer);
+    }
 }
 
 fn create_peers_attr(peers: &Vec<Peer>) -> Result<Nlattr<WgDeviceAttribute, Vec<u8>>, SerError> {

@@ -110,25 +110,27 @@ impl Socket {
         device.ok_or(GetDeviceError::AccessError)
     }
 
-    pub fn set_device(&mut self, device: set::Device) -> Result<(), SetDeviceError> {
-        let genlhdr = {
-            let cmd = WgCmd::SetDevice;
-            let version = WG_GENL_VERSION;
-            let attrs = (&set::DeviceFragment::First(&device)).try_into()?;
-            Genlmsghdr::new(cmd, version, attrs)?
-        };
-        let nlhdr = {
-            let size = None;
-            let nl_type = self.family_id;
-            let flags = vec![NlmF::Request, NlmF::Ack];
-            let seq = None;
-            let pid = None;
-            let payload = genlhdr;
-            Nlmsghdr::new(size, nl_type, flags, seq, pid, payload)
-        };
+    pub fn set_device(&mut self, mut device: set::Device) -> Result<(), SetDeviceError> {
+        for fragment in set::split_into_fragments(&mut device) {
+            let genlhdr = {
+                let cmd = WgCmd::SetDevice;
+                let version = WG_GENL_VERSION;
+                let attrs: Vec<Nlattr<WgDeviceAttribute, Vec<u8>>> = (&fragment).try_into()?;
+                Genlmsghdr::new(cmd, version, attrs)?
+            };
+            let nlhdr = {
+                let size = None;
+                let nl_type = self.family_id;
+                let flags = vec![NlmF::Request, NlmF::Ack];
+                let seq = None;
+                let pid = None;
+                let payload = genlhdr;
+                Nlmsghdr::new(size, nl_type, flags, seq, pid, payload)
+            };
 
-        self.sock.send_nl(nlhdr)?;
-        self.sock.recv_ack()?;
+            self.sock.send_nl(nlhdr)?;
+            self.sock.recv_ack()?;
+        }
 
         Ok(())
     }
