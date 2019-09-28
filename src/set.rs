@@ -26,6 +26,22 @@ pub enum DeviceInterface<'a> {
     Name(Cow<'a, str>),
 }
 
+impl<'a> TryFrom<&DeviceInterface<'a>> for Nlattr<WgDeviceAttribute, Vec<u8>> {
+    type Error = SerError;
+
+    fn try_from(interface: &DeviceInterface) -> Result<Self, Self::Error> {
+        let attr = match interface {
+            &DeviceInterface::Index(ifindex) => {
+                Nlattr::new(None, WgDeviceAttribute::Ifindex, ifindex)?
+            }
+            DeviceInterface::Name(ifname) => {
+                Nlattr::new(None, WgDeviceAttribute::Ifname, ifname.as_ref())?
+            }
+        };
+        Ok(attr)
+    }
+}
+
 #[derive(Debug)]
 pub struct Device<'a> {
     pub interface: DeviceInterface<'a>,
@@ -96,15 +112,7 @@ impl<'a> TryFrom<&Device<'a>> for Vec<Nlattr<WgDeviceAttribute, Vec<u8>>> {
     fn try_from(device: &Device) -> Result<Self, Self::Error> {
         let mut attrs = vec![];
 
-        let interface_attr = match &device.interface {
-            &DeviceInterface::Index(ifindex) => {
-                Nlattr::new(None, WgDeviceAttribute::Ifindex, ifindex)?
-            }
-            DeviceInterface::Name(ifname) => {
-                Nlattr::new(None, WgDeviceAttribute::Ifname, ifname.as_ref())?
-            }
-        };
-        attrs.push(interface_attr);
+        attrs.push((&device.interface).try_into()?);
 
         if !device.flags.is_empty() {
             let mut unique = device.flags.clone();
