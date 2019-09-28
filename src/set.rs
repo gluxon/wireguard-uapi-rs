@@ -20,10 +20,15 @@ pub enum WgPeerF {
     ReplaceAllowedIps = 2,
 }
 
+#[derive(Clone, Debug, PartialEq)]
+pub enum DeviceInterface<'a> {
+    Index(u32),
+    Name(Cow<'a, str>),
+}
+
 #[derive(Debug)]
 pub struct Device<'a> {
-    ifindex: Option<u32>,
-    ifname: Option<Cow<'a, str>>,
+    pub interface: DeviceInterface<'a>,
     /// 0 or WGDEVICE_F_REPLACE_PEERS if all current peers should be removed prior to adding the
     // list below.
     pub flags: Vec<WgDeviceF>,
@@ -39,8 +44,7 @@ pub struct Device<'a> {
 impl<'a> Device<'a> {
     pub fn from_ifname<T: Into<Cow<'a, str>>>(ifname: T) -> Self {
         Self {
-            ifindex: None,
-            ifname: Some(ifname.into()),
+            interface: DeviceInterface::Name(ifname.into()),
             flags: vec![],
             private_key: None,
             listen_port: None,
@@ -51,8 +55,7 @@ impl<'a> Device<'a> {
 
     pub fn from_ifindex(ifindex: u32) -> Self {
         Self {
-            ifindex: Some(ifindex),
-            ifname: None,
+            interface: DeviceInterface::Index(ifindex),
             flags: vec![],
             private_key: None,
             listen_port: None,
@@ -93,17 +96,15 @@ impl<'a> TryFrom<&Device<'a>> for Vec<Nlattr<WgDeviceAttribute, Vec<u8>>> {
     fn try_from(device: &Device) -> Result<Self, Self::Error> {
         let mut attrs = vec![];
 
-        if let Some(ifindex) = device.ifindex {
-            attrs.push(Nlattr::new(None, WgDeviceAttribute::Ifindex, ifindex)?);
-        }
-
-        if let Some(ifname) = &device.ifname {
-            attrs.push(Nlattr::new(
-                None,
-                WgDeviceAttribute::Ifname,
-                ifname.as_ref(),
-            )?);
-        }
+        let interface_attr = match &device.interface {
+            &DeviceInterface::Index(ifindex) => {
+                Nlattr::new(None, WgDeviceAttribute::Ifindex, ifindex)?
+            }
+            DeviceInterface::Name(ifname) => {
+                Nlattr::new(None, WgDeviceAttribute::Ifname, ifname.as_ref())?
+            }
+        };
+        attrs.push(interface_attr);
 
         if !device.flags.is_empty() {
             let mut unique = device.flags.clone();
