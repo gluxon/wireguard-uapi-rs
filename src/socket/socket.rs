@@ -4,6 +4,7 @@ use crate::consts::{WG_GENL_NAME, WG_GENL_VERSION};
 use crate::err::{ConnectError, GetDeviceError, SetDeviceError};
 use crate::get;
 use crate::set;
+use crate::set::create_set_device_messages;
 use crate::socket::parse::*;
 use crate::socket::NlWgMsgType;
 use libc::IFNAMSIZ;
@@ -14,7 +15,6 @@ use neli::nlattr::Nlattr;
 use neli::socket::NlSocket;
 use neli::Nl;
 use neli::StreamWriteBuffer;
-use std::convert::TryInto;
 
 pub struct Socket {
     sock: NlSocket,
@@ -111,24 +111,10 @@ impl Socket {
     }
 
     pub fn set_device(&mut self, device: set::Device) -> Result<(), SetDeviceError> {
-        let genlhdr = {
-            let cmd = WgCmd::SetDevice;
-            let version = WG_GENL_VERSION;
-            let attrs = (&device).try_into()?;
-            Genlmsghdr::new(cmd, version, attrs)?
-        };
-        let nlhdr = {
-            let size = None;
-            let nl_type = self.family_id;
-            let flags = vec![NlmF::Request, NlmF::Ack];
-            let seq = None;
-            let pid = None;
-            let payload = genlhdr;
-            Nlmsghdr::new(size, nl_type, flags, seq, pid, payload)
-        };
-
-        self.sock.send_nl(nlhdr)?;
-        self.sock.recv_ack()?;
+        for nl_message in create_set_device_messages(device, self.family_id)? {
+            self.sock.send_nl(nl_message)?;
+            self.sock.recv_ack()?;
+        }
 
         Ok(())
     }
