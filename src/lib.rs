@@ -5,7 +5,7 @@ pub mod err;
 pub mod get;
 mod interface;
 pub mod set;
-pub mod socket;
+mod socket;
 
 pub use interface::DeviceInterface;
 pub use socket::Socket;
