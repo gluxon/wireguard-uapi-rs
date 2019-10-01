@@ -1,5 +1,5 @@
 mod socket;
-pub use socket::{GetDeviceArg, Socket};
+pub use socket::Socket;
 
 pub(crate) mod parse;
 

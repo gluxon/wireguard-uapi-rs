@@ -2,16 +2,16 @@ use base64;
 use colored::*;
 use failure;
 use std::env;
+use wireguard_uapi;
 use wireguard_uapi::get::{AllowedIp, Device, Peer};
-use wireguard_uapi::socket;
 
 fn main() -> Result<(), failure::Error> {
     let mut args = env::args();
     let _prog_name = args.next();
     let ifname = args.next().expect("Please provide an interface name");
 
-    let mut wg = socket::Socket::connect()?;
-    let device = wg.get_device(socket::GetDeviceArg::Ifname(&ifname))?;
+    let mut wg = wireguard_uapi::Socket::connect()?;
+    let device = wg.get_device(wireguard_uapi::DeviceInterface::from_name(&ifname))?;
 
     print_device(&device);
 

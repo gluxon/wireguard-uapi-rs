@@ -1,36 +1,11 @@
-use crate::attr::WgDeviceAttribute;
 use crate::set::Peer;
-use neli::err::SerError;
-use neli::nlattr::Nlattr;
+use crate::DeviceInterface;
 use std::borrow::Cow;
-use std::convert::TryFrom;
 
 #[derive(Clone, Debug, PartialEq)]
 #[repr(u32)]
 pub enum WgDeviceF {
     ReplacePeers = 1,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub enum DeviceInterface<'a> {
-    Index(u32),
-    Name(Cow<'a, str>),
-}
-
-impl<'a> TryFrom<&DeviceInterface<'a>> for Nlattr<WgDeviceAttribute, Vec<u8>> {
-    type Error = SerError;
-
-    fn try_from(interface: &DeviceInterface) -> Result<Self, Self::Error> {
-        let attr = match interface {
-            &DeviceInterface::Index(ifindex) => {
-                Nlattr::new(None, WgDeviceAttribute::Ifindex, ifindex)?
-            }
-            DeviceInterface::Name(ifname) => {
-                Nlattr::new(None, WgDeviceAttribute::Ifname, ifname.as_ref())?
-            }
-        };
-        Ok(attr)
-    }
 }
 
 #[derive(Debug)]

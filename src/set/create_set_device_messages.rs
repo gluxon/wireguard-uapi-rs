@@ -1,8 +1,9 @@
-use super::{AllowedIp, Device, DeviceInterface, Peer};
+use super::{AllowedIp, Device, Peer};
 use crate::attr::{NlaNested, WgDeviceAttribute, WgPeerAttribute};
 use crate::cmd::WgCmd;
 use crate::consts::WG_GENL_VERSION;
 use crate::socket::NlWgMsgType;
+use crate::DeviceInterface;
 use neli::consts::NlmF;
 use neli::err::SerError;
 use neli::genl::Genlmsghdr;
@@ -33,14 +34,7 @@ impl IncubatingDeviceFragment {
             partial_device: {
                 let mut attrs = vec![];
 
-                let interface_attr = match &device.interface {
-                    &DeviceInterface::Index(ifindex) => {
-                        Nlattr::new(None, WgDeviceAttribute::Ifindex, ifindex)?
-                    }
-                    DeviceInterface::Name(ifname) => {
-                        Nlattr::new(None, WgDeviceAttribute::Ifname, ifname.as_ref())?
-                    }
-                };
+                let interface_attr = (&device.interface).try_into()?;
                 attrs.push(interface_attr);
 
                 if !device.flags.is_empty() {

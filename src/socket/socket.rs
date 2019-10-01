@@ -7,6 +7,7 @@ use crate::set;
 use crate::set::create_set_device_messages;
 use crate::socket::parse::*;
 use crate::socket::NlWgMsgType;
+use crate::DeviceInterface;
 use libc::IFNAMSIZ;
 use neli::consts::{NlFamily, NlmF, Nlmsg};
 use neli::genl::Genlmsghdr;
@@ -19,11 +20,6 @@ use neli::StreamWriteBuffer;
 pub struct Socket {
     sock: NlSocket,
     family_id: NlWgMsgType,
-}
-
-pub enum GetDeviceArg<'a> {
-    Ifindex(u32),
-    Ifname(&'a str),
 }
 
 impl Socket {
@@ -48,17 +44,20 @@ impl Socket {
         })
     }
 
-    pub fn get_device(&mut self, interface: GetDeviceArg) -> Result<get::Device, GetDeviceError> {
+    pub fn get_device(
+        &mut self,
+        interface: DeviceInterface,
+    ) -> Result<get::Device, GetDeviceError> {
         let mut mem = StreamWriteBuffer::new_growable(None);
         let attr = match interface {
-            GetDeviceArg::Ifname(name) => {
+            DeviceInterface::Name(name) => {
                 Some(name.len())
                     .filter(|&len| 0 < len && len < IFNAMSIZ)
                     .ok_or_else(|| GetDeviceError::InvalidInterfaceName)?;
-                name.serialize(&mut mem)?;
+                name.as_ref().serialize(&mut mem)?;
                 Nlattr::new(None, WgDeviceAttribute::Ifname, mem.as_ref())?
             }
-            GetDeviceArg::Ifindex(index) => {
+            DeviceInterface::Index(index) => {
                 index.serialize(&mut mem)?;
                 Nlattr::new(None, WgDeviceAttribute::Ifindex, mem.as_ref())?
             }

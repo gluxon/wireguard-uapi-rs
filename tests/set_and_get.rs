@@ -5,8 +5,7 @@ use rand;
 use std::net::{IpAddr, Ipv6Addr};
 use std::time::Duration;
 use wireguard_uapi;
-use wireguard_uapi::socket::{GetDeviceArg, Socket};
-use wireguard_uapi::{get, set};
+use wireguard_uapi::{get, set, DeviceInterface, Socket};
 
 fn parse_device_key(buf: &[u8]) -> [u8; 32] {
     let mut key = [0u8; 32];
@@ -109,7 +108,7 @@ fn simple() -> Result<(), failure::Error> {
             ]);
 
         wg.set_device(set_device_args)?;
-        wg.get_device(GetDeviceArg::Ifname(&test_device.ifname))?
+        wg.get_device(DeviceInterface::from_name(&test_device.ifname))?
     };
 
     // The ifindex can't be determined before response_device is set. So we'll just copy over the
@@ -130,7 +129,7 @@ fn set_ifname_has_proper_padding() -> Result<(), failure::Error> {
         let mut wg = Socket::connect()?;
         let set_device_args = set::Device::from_ifname(ifname).listen_port(listen_port);
         wg.set_device(set_device_args)?;
-        wg.get_device(GetDeviceArg::Ifname(ifname))?
+        wg.get_device(DeviceInterface::from_name(ifname))?
     };
 
     // If ifname wasn't properly padded, the listen_port won't be properly set. Check that it is
@@ -193,7 +192,7 @@ fn large_peer() -> Result<(), failure::Error> {
         };
 
         wg.set_device(set_device_args)?;
-        wg.get_device(GetDeviceArg::Ifname(&test_device.ifname))?
+        wg.get_device(DeviceInterface::from_name(&test_device.ifname))?
     };
 
     // The ifindex can't be determined before response_device is set. So we'll just copy over the
