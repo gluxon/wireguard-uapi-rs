@@ -5,6 +5,7 @@ edition = "2018"
 authors = ["Brandon Cheng <brandon.cheng@protonmail.com>"]
 license = "MIT"
 repository = "https://github.com/gluxon/wireguard-uapi-rs"
+description = "Control WireGuard interfaces."
 
 [dependencies]
 buffering = { version = "0.3.2",  features = ["copy"] }
