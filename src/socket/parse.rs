@@ -330,11 +330,11 @@ mod tests {
     use super::*;
     use crate::cmd::WgCmd;
     use base64;
-    use buffering::copy::StreamReadBuffer;
     use failure;
     use neli::err::DeError;
     use neli::genl::Genlmsghdr;
     use neli::Nl;
+    use neli::StreamReadBuffer;
 
     fn create_test_genlmsghdr(
         payload: &[u8],
