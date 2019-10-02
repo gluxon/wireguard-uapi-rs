@@ -1,7 +1,8 @@
+use super::{link_message, WireGuardDeviceLinkOperation};
 use crate::attr::WgDeviceAttribute;
 use crate::cmd::WgCmd;
 use crate::consts::{WG_GENL_NAME, WG_GENL_VERSION};
-use crate::err::{ConnectError, GetDeviceError, SetDeviceError};
+use crate::err::{ConnectError, GetDeviceError, LinkDeviceError, SetDeviceError};
 use crate::get;
 use crate::set;
 use crate::set::create_set_device_messages;
@@ -115,6 +116,20 @@ impl Socket {
             self.sock.recv_ack()?;
         }
 
+        Ok(())
+    }
+
+    pub fn add_device(&self, ifname: &str) -> Result<(), LinkDeviceError> {
+        let mut sock = NlSocket::connect(NlFamily::Route, None, None, true)?;
+        sock.send_nl(link_message(ifname, WireGuardDeviceLinkOperation::Add)?)?;
+        sock.recv_ack()?;
+        Ok(())
+    }
+
+    pub fn del_device(&self, ifname: &str) -> Result<(), LinkDeviceError> {
+        let mut sock = NlSocket::connect(NlFamily::Route, None, None, true)?;
+        sock.send_nl(link_message(ifname, WireGuardDeviceLinkOperation::Delete)?)?;
+        sock.recv_ack()?;
         Ok(())
     }
 }

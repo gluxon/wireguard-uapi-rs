@@ -39,8 +39,6 @@ jobs:
 
     - stage: test
       script:
-        - sudo ip link add wgtest0 type wireguard
-        - sudo ip link add wgtest12 type wireguard
         - cargo build --tests --verbose
         # Give compiled tests the ability to set and read WireGuard devices. Otherwise
         # they will likely fail with access/permission errors.

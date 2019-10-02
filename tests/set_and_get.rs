@@ -7,6 +7,10 @@ use std::time::Duration;
 use wireguard_uapi;
 use wireguard_uapi::{get, set, DeviceInterface, Socket};
 
+fn get_random_ifname() -> String {
+    format!("wgtest{}", rand::random::<u16>())
+}
+
 fn parse_device_key(buf: &[u8]) -> [u8; 32] {
     let mut key = [0u8; 32];
     key.copy_from_slice(&buf);
@@ -31,7 +35,7 @@ fn create_set_allowed_ips(allowed_ips: &[get::AllowedIp]) -> Vec<set::AllowedIp>
 fn simple() -> Result<(), failure::Error> {
     let mut test_device = get::Device {
         ifindex: 0,
-        ifname: "wgtest0".to_string(),
+        ifname: get_random_ifname(),
         private_key: Some(parse_device_key(&base64::decode(
             "EHhtoXVXpnXz31cx8nrAxQfvaRqe1vf343GVSyEtqUU=",
         )?)),
@@ -89,6 +93,8 @@ fn simple() -> Result<(), failure::Error> {
 
     let response_device = {
         let mut wg = Socket::connect()?;
+        println!("{}", test_device.ifname);
+        wg.add_device(&test_device.ifname)?;
 
         let set_device_args = set::Device::from_ifname(&test_device.ifname)
             .private_key(test_device.private_key.as_ref().unwrap())
@@ -108,7 +114,10 @@ fn simple() -> Result<(), failure::Error> {
             ]);
 
         wg.set_device(set_device_args)?;
-        wg.get_device(DeviceInterface::from_name(&test_device.ifname))?
+        let response_device = wg.get_device(DeviceInterface::from_name(&test_device.ifname))?;
+        wg.del_device(&test_device.ifname)?;
+
+        response_device
     };
 
     // The ifindex can't be determined before response_device is set. So we'll just copy over the
@@ -122,14 +131,17 @@ fn simple() -> Result<(), failure::Error> {
 
 #[test]
 fn set_ifname_has_proper_padding() -> Result<(), failure::Error> {
-    let ifname = "wgtest12";
+    let ifname = get_random_ifname();
     let listen_port = rand::random::<u16>();
 
     let response_device = {
         let mut wg = Socket::connect()?;
-        let set_device_args = set::Device::from_ifname(ifname).listen_port(listen_port);
+        wg.add_device(&ifname)?;
+        let set_device_args = set::Device::from_ifname(&ifname).listen_port(listen_port);
         wg.set_device(set_device_args)?;
-        wg.get_device(DeviceInterface::from_name(ifname))?
+        let response_device = wg.get_device(DeviceInterface::from_name(&ifname))?;
+        wg.del_device(&ifname)?;
+        response_device
     };
 
     // If ifname wasn't properly padded, the listen_port won't be properly set. Check that it is
@@ -143,7 +155,7 @@ fn set_ifname_has_proper_padding() -> Result<(), failure::Error> {
 fn large_peer() -> Result<(), failure::Error> {
     let mut test_device = get::Device {
         ifindex: 6,
-        ifname: "wgtest0".to_string(),
+        ifname: get_random_ifname(),
         private_key: Some(parse_device_key(&base64::decode(
             "yAnz5TF+lXXJte14tji3zlMNq+hd2rYUIgJBgB3fBmk=",
         )?)),
@@ -176,6 +188,7 @@ fn large_peer() -> Result<(), failure::Error> {
 
     let response_device = {
         let mut wg = Socket::connect()?;
+        wg.add_device(&test_device.ifname)?;
 
         let set_device_args = {
             let peer = set::Peer::from_public_key(&test_device.peers[0].public_key)
@@ -192,7 +205,10 @@ fn large_peer() -> Result<(), failure::Error> {
         };
 
         wg.set_device(set_device_args)?;
-        wg.get_device(DeviceInterface::from_name(&test_device.ifname))?
+        let response_device = wg.get_device(DeviceInterface::from_name(&test_device.ifname))?;
+        wg.del_device(&test_device.ifname)?;
+
+        response_device
     };
 
     // The ifindex can't be determined before response_device is set. So we'll just copy over the
