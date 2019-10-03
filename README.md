@@ -1,6 +1,7 @@
 # wireguard-uapi-rs
 
 [![Build Status](https://travis-ci.org/gluxon/wireguard-uapi-rs.svg?branch=master)](https://travis-ci.org/gluxon/wireguard-uapi-rs)
+[![Crates version](https://img.shields.io/crates/v/wireguard-uapi.svg)](https://crates.io/crates/wireguard-uapi)
 
 This library is a work in progress. At the moment this library just talks to the WireGuard dynamic kernel module.
 
