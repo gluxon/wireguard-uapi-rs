@@ -11,7 +11,7 @@ description = "Control WireGuard interfaces."
 derive_builder = "0.7.1"
 failure = "0.1.5"
 libc = "0.2.51"
-neli = "0.4.3-r2"
+neli = "0.4.3"
 
 [dev-dependencies]
 base64 = "0.10.1"
