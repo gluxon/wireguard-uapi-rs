@@ -1,11 +1,12 @@
 [package]
 name = "wireguard-uapi"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2018"
 authors = ["Brandon Cheng <brandon.cheng@protonmail.com>"]
 license = "MIT"
 repository = "https://github.com/gluxon/wireguard-uapi-rs"
 description = "Control WireGuard interfaces."
+readme = "README.md"
 
 [dependencies]
 derive_builder = "0.7.1"
