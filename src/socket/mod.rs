@@ -10,3 +10,5 @@ pub(crate) type NlWgMsgType = u16;
 
 pub(crate) mod link_message;
 pub(crate) use link_message::{link_message, WireGuardDeviceLinkOperation};
+
+pub(crate) mod list_device_names_utils;

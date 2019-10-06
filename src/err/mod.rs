@@ -7,6 +7,9 @@ pub use get_device_error::GetDeviceError;
 mod link_device_error;
 pub use link_device_error::LinkDeviceError;
 
+mod list_devices_error;
+pub use list_devices_error::ListDevicesError;
+
 mod set_device_error;
 pub use set_device_error::SetDeviceError;
 
