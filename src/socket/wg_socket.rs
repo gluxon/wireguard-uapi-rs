@@ -102,6 +102,18 @@ impl WgSocket {
         device.ok_or(GetDeviceError::AccessError)
     }
 
+    /// This assumes that the device interface has already been created. Otherwise an error will
+    /// be returned. You can create a new device interface with
+    /// [`RouteSocket::add_device`](./struct.RouteSocket.html#add_device.v).
+    ///
+    /// The peers in this device won't be reachable at their allowed IPs until they're added to the
+    /// newly created device interface through a Netlink Route message. This library doesn't have
+    /// built-in way to do that right now. Here's how it would be done with the `ip` command:
+    ///
+    ///
+    /// ```sh
+    ///  sudo ip -4 route add 127.3.1.1/32 dev wgtest0
+    /// ```
     pub fn set_device(&mut self, device: set::Device) -> Result<(), SetDeviceError> {
         for nl_message in create_set_device_messages(device, self.family_id)? {
             self.sock.send_nl(nl_message)?;
