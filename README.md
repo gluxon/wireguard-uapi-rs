@@ -12,3 +12,5 @@ This library is a work in progress. At the moment this library just talks to the
 Checkout the examples folder for more guidance.
 
 Feel free to file bugs.
+
+DISCLAIMER: This isn't an official WireGuard product. (Although I'm interested in making it so.)
