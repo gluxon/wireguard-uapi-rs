@@ -1,5 +1,8 @@
-mod socket;
-pub use socket::Socket;
+mod route_socket;
+pub use route_socket::RouteSocket;
+
+mod wg_socket;
+pub use wg_socket::WgSocket;
 
 pub(crate) mod parse;
 

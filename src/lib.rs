@@ -8,4 +8,4 @@ pub mod set;
 mod socket;
 
 pub use interface::DeviceInterface;
-pub use socket::Socket;
+pub use socket::{RouteSocket, WgSocket};

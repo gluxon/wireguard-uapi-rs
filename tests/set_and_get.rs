@@ -5,7 +5,7 @@ use rand;
 use std::net::{IpAddr, Ipv6Addr};
 use std::time::Duration;
 use wireguard_uapi;
-use wireguard_uapi::{get, set, DeviceInterface, Socket};
+use wireguard_uapi::{get, set, DeviceInterface, RouteSocket, WgSocket};
 
 fn get_random_ifname() -> String {
     format!("wgtest{}", rand::random::<u16>())
@@ -92,9 +92,11 @@ fn simple() -> Result<(), failure::Error> {
     };
 
     let response_device = {
-        let mut wg = Socket::connect()?;
+        let mut wg = WgSocket::connect()?;
+        let mut route = RouteSocket::connect()?;
+
         println!("{}", test_device.ifname);
-        wg.add_device(&test_device.ifname)?;
+        route.add_device(&test_device.ifname)?;
 
         let set_device_args = set::Device::from_ifname(&test_device.ifname)
             .private_key(test_device.private_key.as_ref().unwrap())
@@ -115,7 +117,7 @@ fn simple() -> Result<(), failure::Error> {
 
         wg.set_device(set_device_args)?;
         let response_device = wg.get_device(DeviceInterface::from_name(&test_device.ifname))?;
-        wg.del_device(&test_device.ifname)?;
+        route.del_device(&test_device.ifname)?;
 
         response_device
     };
@@ -135,12 +137,14 @@ fn set_ifname_has_proper_padding() -> Result<(), failure::Error> {
     let listen_port = rand::random::<u16>();
 
     let response_device = {
-        let mut wg = Socket::connect()?;
-        wg.add_device(&ifname)?;
+        let mut wg = WgSocket::connect()?;
+        let mut route = RouteSocket::connect()?;
+
+        route.add_device(&ifname)?;
         let set_device_args = set::Device::from_ifname(&ifname).listen_port(listen_port);
         wg.set_device(set_device_args)?;
         let response_device = wg.get_device(DeviceInterface::from_name(&ifname))?;
-        wg.del_device(&ifname)?;
+        route.del_device(&ifname)?;
         response_device
     };
 
@@ -187,8 +191,10 @@ fn large_peer() -> Result<(), failure::Error> {
     };
 
     let response_device = {
-        let mut wg = Socket::connect()?;
-        wg.add_device(&test_device.ifname)?;
+        let mut wg = WgSocket::connect()?;
+        let mut route = RouteSocket::connect()?;
+
+        route.add_device(&test_device.ifname)?;
 
         let set_device_args = {
             let peer = set::Peer::from_public_key(&test_device.peers[0].public_key)
@@ -206,7 +212,7 @@ fn large_peer() -> Result<(), failure::Error> {
 
         wg.set_device(set_device_args)?;
         let response_device = wg.get_device(DeviceInterface::from_name(&test_device.ifname))?;
-        wg.del_device(&test_device.ifname)?;
+        route.del_device(&test_device.ifname)?;
 
         response_device
     };
