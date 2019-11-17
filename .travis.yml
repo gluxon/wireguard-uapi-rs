@@ -15,8 +15,7 @@ addons:
 
 stages:
   - build
-  - lint
-  - test
+  - check
 
 jobs:
   allow_failures:
@@ -28,19 +27,20 @@ jobs:
       script:
         - cargo build --verbose
 
-    - stage: lint
+    - stage: check
       name: Clippy
       script:
         - rustup component add clippy
         - cargo clippy --all-targets --all-features
 
-    - stage: lint
+    - stage: check
       name: rustfmt
       script:
         - rustup component add rustfmt
         - cargo fmt --all -- --check
 
-    - stage: test
+    - stage: check
+      name: Test
       script:
         - cargo build --tests --verbose
         # Give compiled tests the ability to set and read WireGuard devices. Otherwise
