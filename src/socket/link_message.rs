@@ -1,4 +1,5 @@
 use crate::consts::WG_GENL_NAME;
+use libc::{IFLA_INFO_KIND, IFLA_LINKINFO};
 use neli::consts::{Arphrd, Ifla, NlmF, Rtm};
 use neli::err::SerError;
 use neli::nl::Nlmsghdr;
@@ -9,12 +10,6 @@ use neli::Nl;
 use neli::StreamWriteBuffer;
 
 const RTATTR_HEADER_LEN: libc::c_ushort = 4;
-
-// https://github.com/torvalds/linux/blob/54ecb8f7/include/uapi/linux/if_link.h#L133
-const IFLA_LINKINFO: libc::c_ushort = 18;
-
-// https://github.com/torvalds/linux/blob/54ecb8f7/include/uapi/linux/if_link.h#L356
-const IFLA_INFO_KIND: libc::c_ushort = 1;
 
 pub enum WireGuardDeviceLinkOperation {
     Add,
