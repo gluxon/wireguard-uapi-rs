@@ -1,1 +1,4 @@
+# Cargo.lock should be ignored for library crates
+# https://github.com/rust-lang/cargo/issues/315
+Cargo.lock
 target
