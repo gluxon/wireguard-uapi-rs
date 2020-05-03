@@ -329,8 +329,8 @@ pub fn parse_in6_addr(buf: &[u8]) -> Result<Ipv6Addr, ParseAttributeError> {
 mod tests {
     use super::*;
     use crate::cmd::WgCmd;
+    use anyhow::Error;
     use base64;
-    use failure;
     use neli::err::DeError;
     use neli::genl::Genlmsghdr;
     use neli::Nl;
@@ -345,7 +345,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_device_example_from_man_page() -> Result<(), failure::Error> {
+    fn parse_device_example_from_man_page() -> Result<(), Error> {
         // This payload comes from the configuration example in "man wg", but with the third peer
         // removed since it specifies an invalid endpoint.
         let payload = vec![
@@ -447,7 +447,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_device_with_large_peer() -> Result<(), failure::Error> {
+    fn parse_device_with_large_peer() -> Result<(), Error> {
         let first_payload = [
             0, 1, 0, 0, 6, 0, 6, 0, 108, 202, 0, 0, 8, 0, 7, 0, 0, 0, 0, 0, 8, 0, 1, 0, 6, 0, 0, 0,
             9, 0, 2, 0, 116, 101, 115, 116, 0, 0, 0, 0, 36, 0, 3, 0, 200, 9, 243, 229, 49, 126,

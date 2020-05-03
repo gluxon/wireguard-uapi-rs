@@ -1,25 +1,25 @@
 use crate::err::ParseDeviceError;
-use failure::Fail;
 use neli::err::{NlError, SerError};
+use thiserror::Error;
 
-#[derive(Fail, Debug)]
+#[derive(Error, Debug)]
 pub enum GetDeviceError {
-    #[fail(display = "{}", _0)]
-    NlError(#[fail(cause)] NlError),
+    #[error(transparent)]
+    NlError(NlError),
 
-    #[fail(display = "{}", _0)]
-    NlSerError(#[fail(cause)] SerError),
+    #[error(transparent)]
+    NlSerError(SerError),
 
-    #[fail(display = "Interface names must be 1 to IFNAMSIZ-1 characters")]
+    #[error("Interface names must be 1 to IFNAMSIZ-1 characters")]
     InvalidInterfaceName,
 
-    #[fail(
-        display = "Unable to get interface from WireGuard. Make sure it exists and you have permissions to access it."
+    #[error(
+        "Unable to get interface from WireGuard. Make sure it exists and you have permissions to access it."
     )]
     AccessError,
 
-    #[fail(display = "{}", _0)]
-    ParseDeviceError(#[fail(cause)] ParseDeviceError),
+    #[error(transparent)]
+    ParseDeviceError(ParseDeviceError),
 }
 
 impl From<NlError> for GetDeviceError {

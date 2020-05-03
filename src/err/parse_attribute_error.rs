@@ -1,29 +1,30 @@
-use failure::Fail;
 use libc;
 use std::num::TryFromIntError;
 use std::string::FromUtf8Error;
+use thiserror::Error;
 
-#[derive(Fail, Debug)]
+#[derive(Error, Debug)]
 pub enum ParseAttributeError {
-    #[fail(
-        display = "Error parsing Netlink attribute. Expected {} bytes, found {}.",
-        expected, found
+    #[error(
+        "Error parsing Netlink attribute. Expected {} bytes, found {}.",
+        expected,
+        found
     )]
     StaticLengthError { expected: usize, found: usize },
 
-    #[fail(display = "{}", _0)]
-    ParseSockAddrError(#[fail(cause)] ParseSockAddrError),
+    #[error("{0}")]
+    ParseSockAddrError(#[source] ParseSockAddrError),
 
-    #[fail(display = "{}", _0)]
-    ParseIpAddrError(#[fail(cause)] ParseIpAddrError),
+    #[error("{0}")]
+    ParseIpAddrError(#[source] ParseIpAddrError),
 
-    #[fail(display = "{}", _0)]
-    FromUtf8Error(#[fail(cause)] FromUtf8Error),
+    #[error("{0}")]
+    FromUtf8Error(#[source] FromUtf8Error),
 
-    #[fail(display = "{}", _0)]
-    TryFromIntError(#[fail(cause)] TryFromIntError),
+    #[error("{0}")]
+    TryFromIntError(#[source] TryFromIntError),
 
-    #[fail(display = "Expected a null-terminated string in Netlink response")]
+    #[error("Expected a null-terminated string in Netlink response")]
     InvalidCStringError,
 }
 
@@ -39,9 +40,9 @@ impl From<TryFromIntError> for ParseAttributeError {
     }
 }
 
-#[derive(Fail, Debug)]
+#[derive(Error, Debug)]
 pub enum ParseSockAddrError {
-    #[fail(display = "Unrecognized address family")]
+    #[error("Unrecognized address family")]
     UnrecognizedAddressFamilyError { id: libc::c_int },
 }
 
@@ -51,10 +52,10 @@ impl From<ParseSockAddrError> for ParseAttributeError {
     }
 }
 
-#[derive(Fail, Debug)]
+#[derive(Error, Debug)]
 pub enum ParseIpAddrError {
-    #[fail(
-        display = "Payload does not correspond to known ip address lengths. Found {}.",
+    #[error(
+        "Payload does not correspond to known ip address lengths. Found {}.",
         found
     )]
     InvalidIpAddrLengthError { found: usize },

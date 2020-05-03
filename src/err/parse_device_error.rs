@@ -1,28 +1,28 @@
 use crate::err::ParseAttributeError;
-use failure::Fail;
 use neli::err::{DeError, NlError};
+use thiserror::Error;
 
-#[derive(Fail, Debug)]
+#[derive(Error, Debug)]
 pub enum ParseDeviceError {
-    #[fail(display = "{}", _0)]
-    NlError(#[fail(cause)] NlError),
+    #[error(transparent)]
+    NlError(NlError),
 
-    #[fail(display = "{}", _0)]
-    NlDeError(#[fail(cause)] DeError),
+    #[error(transparent)]
+    NlDeError(DeError),
 
-    #[fail(display = "{}", _0)]
+    #[error("{0}")]
     String(String),
 
-    #[fail(display = "{}", _0)]
-    ParseAttributeError(#[fail(cause)] ParseAttributeError),
+    #[error(transparent)]
+    ParseAttributeError(ParseAttributeError),
 
-    #[fail(display = "Encountered unknown device attribute id {}", id)]
+    #[error("Encountered unknown device attribute id {}", id)]
     UnknownDeviceAttributeError { id: u16 },
 
-    #[fail(display = "Encountered unknown peer attribute id {}", id)]
+    #[error("Encountered unknown peer attribute id {}", id)]
     UnknownPeerAttributeError { id: u16 },
 
-    #[fail(display = "Encountered unknown allowed ip attribute id {}", id)]
+    #[error("Encountered unknown allowed ip attribute id {}", id)]
     UnknownAllowedIpAttributeError { id: u16 },
 }
 

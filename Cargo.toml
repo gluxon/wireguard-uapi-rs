@@ -10,11 +10,12 @@ readme = "README.md"
 
 [dependencies]
 derive_builder = "0.7.1"
-failure = "0.1.5"
 libc = "0.2.66"
 neli = "0.4.3"
+thiserror = "1.0"
 
 [dev-dependencies]
+anyhow = "1.0"
 base64 = "0.10.1"
 colored = "1.7"
 predicates = "1"

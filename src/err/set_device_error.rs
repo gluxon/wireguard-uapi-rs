@@ -1,13 +1,13 @@
-use failure::Fail;
 use neli::err::{NlError, SerError};
+use thiserror::Error;
 
-#[derive(Fail, Debug)]
+#[derive(Error, Debug)]
 pub enum SetDeviceError {
-    #[fail(display = "{}", _0)]
-    NlError(#[fail(cause)] NlError),
+    #[error(transparent)]
+    NlError(NlError),
 
-    #[fail(display = "{}", _0)]
-    NlSerError(#[fail(cause)] SerError),
+    #[error(transparent)]
+    NlSerError(SerError),
 }
 
 impl From<NlError> for SetDeviceError {

@@ -1,5 +1,5 @@
+use anyhow;
 use base64;
-use failure;
 use libc;
 use rand;
 use std::net::{IpAddr, Ipv6Addr};
@@ -32,7 +32,7 @@ fn create_set_allowed_ips(allowed_ips: &[get::AllowedIp]) -> Vec<set::AllowedIp>
 ///
 ///   - Create it with: ip link add wgtest0 type wireguard
 ///   - Remove it with: ip link del wgtest0
-fn simple() -> Result<(), failure::Error> {
+fn simple() -> anyhow::Result<()> {
     let mut test_device = get::Device {
         ifindex: 0,
         ifname: get_random_ifname(),
@@ -132,7 +132,7 @@ fn simple() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn set_ifname_has_proper_padding() -> Result<(), failure::Error> {
+fn set_ifname_has_proper_padding() -> anyhow::Result<()> {
     let ifname = get_random_ifname();
     let listen_port = rand::random::<u16>();
 
@@ -156,7 +156,7 @@ fn set_ifname_has_proper_padding() -> Result<(), failure::Error> {
 }
 
 #[test]
-fn large_peer() -> Result<(), failure::Error> {
+fn large_peer() -> anyhow::Result<()> {
     let mut test_device = get::Device {
         ifindex: 6,
         ifname: get_random_ifname(),

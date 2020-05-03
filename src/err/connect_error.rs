@@ -1,13 +1,13 @@
-use failure::Fail;
 use neli::err::NlError;
+use thiserror::Error;
 
-#[derive(Fail, Debug)]
+#[derive(Error, Debug)]
 pub enum ConnectError {
-    #[fail(display = "{}", _0)]
-    NlError(#[fail(cause)] NlError),
+    #[error(transparent)]
+    NlError(NlError),
 
-    #[fail(display = "Unable to connect to the WireGuard DKMS. Is WireGuard installed?")]
-    ResolveFamilyError(#[fail(cause)] NlError),
+    #[error("Unable to connect to the WireGuard DKMS. Is WireGuard installed?")]
+    ResolveFamilyError(#[source] NlError),
 }
 
 impl From<NlError> for ConnectError {

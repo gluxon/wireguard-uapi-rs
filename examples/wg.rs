@@ -1,11 +1,11 @@
+use anyhow;
 use base64;
 use colored::*;
-use failure;
 use std::env;
 use wireguard_uapi;
 use wireguard_uapi::get::{AllowedIp, Device, Peer};
 
-fn main() -> Result<(), failure::Error> {
+fn main() -> anyhow::Result<()> {
     let mut args = env::args();
     let _prog_name = args.next();
     let ifname = args.next().expect("Please provide an interface name");
