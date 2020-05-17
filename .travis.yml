@@ -26,7 +26,7 @@ jobs:
       name: Clippy
       script:
         - rustup component add clippy
-        - cargo clippy --all-targets --all-features
+        - cargo clippy --all-targets --all-features -- -D warnings
 
     - stage: check
       name: rustfmt
