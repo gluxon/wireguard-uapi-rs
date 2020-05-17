@@ -412,8 +412,10 @@ mod tests {
         Genlmsghdr::deserialize(&mut mem)
     }
 
+    // Ensure backwards compatability with pre-5.2 kernels. See issue #9 for
+    // context on changes to NLA_F_NESTED.
     #[test]
-    fn parse_device_example_from_man_page() -> Result<(), Error> {
+    fn parse_device_example_from_man_page_pre_five_point_two_kernel() -> Result<(), Error> {
         let payload = vec![
             1, 1, 0, 0, 6, 0, 6, 0, 108, 202, 0, 0, 8, 0, 7, 0, 0, 0, 0, 0, 8, 0, 1, 0, 6, 0, 0, 0,
             9, 0, 2, 0, 116, 101, 115, 116, 0, 0, 0, 0, 36, 0, 3, 0, 200, 9, 243, 229, 49, 126,
