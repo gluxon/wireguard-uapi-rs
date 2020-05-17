@@ -24,7 +24,10 @@ fn print_device(device: &Device) {
             base64::encode(public_key)
         );
     }
-    println!("  {}: {}", "listen port".black().bold(), device.listen_port);
+
+    if device.listen_port != 0 {
+        println!("  {}: {}", "listen port".black().bold(), device.listen_port);
+    }
 
     for peer in &device.peers {
         println!();
