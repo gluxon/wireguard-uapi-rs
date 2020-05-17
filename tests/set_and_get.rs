@@ -28,10 +28,6 @@ fn create_set_allowed_ips(allowed_ips: &[get::AllowedIp]) -> Vec<set::AllowedIp>
 }
 
 #[test]
-/// This test requires that the "wgtest0" interface already exists.
-///
-///   - Create it with: ip link add wgtest0 type wireguard
-///   - Remove it with: ip link del wgtest0
 fn simple() -> anyhow::Result<()> {
     let mut test_device = get::Device {
         ifindex: 0,
