@@ -99,7 +99,9 @@ impl IncubatingDeviceFragment {
         let mut device_attrs = self.partial_device;
 
         // TODO: Condition this behavior on whether peers have ever been added.
-        device_attrs.push(self.peers);
+        if self.peers.size() > GENL_HEADER_SIZE {
+            device_attrs.push(self.peers);
+        }
 
         let genlhdr = {
             let cmd = WgCmd::SetDevice;
@@ -236,9 +238,9 @@ impl IncubatingPeerFragment {
 
     fn finalize(self) -> Result<Nlattr<NlaNested, Vec<u8>>, SerError> {
         let mut partial_peer = self.partial_peer;
-        let allowed_ips = self.allowed_ips;
-
-        partial_peer.add_nested_attribute(&allowed_ips)?;
+        if self.allowed_ips.size() > GENL_HEADER_SIZE {
+            partial_peer.add_nested_attribute(&self.allowed_ips)?;
+        }
         Ok(partial_peer)
     }
 }
