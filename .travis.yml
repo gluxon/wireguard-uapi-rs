@@ -19,6 +19,9 @@ stages:
   - test
 
 jobs:
+  allow_failures:
+    - dist: focal
+
   include:
 
     - stage: build
