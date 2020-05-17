@@ -58,10 +58,9 @@ impl IncubatingDeviceFragment {
 
                 if let Some(listen_port) = device.listen_port {
                     attrs.push(Nlattr::new(
-                        Some(6),
+                        None,
                         WgDeviceAttribute::ListenPort,
-                        // neli 0.3.1 does not pad. Add 2 bytes to meet required 4 byte boundary.
-                        [listen_port.to_ne_bytes(), [0u8; 2]].concat(),
+                        &listen_port.to_ne_bytes()[..],
                     )?);
                 }
 
@@ -185,10 +184,9 @@ impl IncubatingPeerFragment {
 
         if let Some(persistent_keepalive_interval) = peer.persistent_keepalive_interval {
             partial_peer.add_nested_attribute(&Nlattr::new(
-                Some(6),
+                None,
                 WgPeerAttribute::PersistentKeepaliveInterval,
-                // neli 0.3.1 does not pad. Add 2 bytes to meet required 4 byte boundary.
-                [persistent_keepalive_interval.to_ne_bytes(), [0u8; 2]].concat(),
+                &persistent_keepalive_interval.to_ne_bytes()[..],
             )?)?;
         }
 

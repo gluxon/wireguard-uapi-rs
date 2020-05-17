@@ -32,8 +32,7 @@ impl<'a> TryFrom<&AllowedIp<'a>> for Nlattr<NlaNested, Vec<u8>> {
         nested.add_nested_attribute(&Nlattr::new(
             None,
             WgAllowedIpAttribute::Family,
-            // neli 0.3.1 does not pad. Add 2 bytes to meet required 4 byte boundary.
-            [family.to_ne_bytes(), [0u8; 2]].concat(),
+            &family.to_ne_bytes()[..],
         )?)?;
 
         let ipaddr = match allowed_ip.ipaddr {
@@ -47,10 +46,9 @@ impl<'a> TryFrom<&AllowedIp<'a>> for Nlattr<NlaNested, Vec<u8>> {
             IpAddr::V6(_) => 128,
         });
         nested.add_nested_attribute(&Nlattr::new(
-            Some(5),
+            None,
             WgAllowedIpAttribute::CidrMask,
-            // neli 0.3.1 does not pad. Add 3 bytes to meet required 4 byte boundary.
-            [&cidr_mask.to_ne_bytes()[..], &[0u8; 3][..]].concat(),
+            &cidr_mask.to_ne_bytes()[..],
         )?)?;
 
         Ok(nested)
