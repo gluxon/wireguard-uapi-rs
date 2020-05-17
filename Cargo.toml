@@ -1,6 +1,6 @@
 [package]
 name = "wireguard-uapi"
-version = "1.0.3"
+version = "1.0.4"
 edition = "2018"
 authors = ["Brandon Cheng <brandon.cheng@protonmail.com>"]
 license = "MIT"
