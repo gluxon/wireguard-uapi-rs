@@ -1,16 +1,18 @@
 use colored::*;
-use std::env;
 use wireguard_uapi::get::{AllowedIp, Device, Peer};
 
 fn main() -> anyhow::Result<()> {
-    let mut args = env::args();
-    let _prog_name = args.next();
-    let ifname = args.next().expect("Please provide an interface name");
+    let device_names = wireguard_uapi::RouteSocket::connect()?.list_device_names()?;
 
     let mut wg = wireguard_uapi::WgSocket::connect()?;
-    let device = wg.get_device(wireguard_uapi::DeviceInterface::from_name(&ifname))?;
+    for device_name in &device_names {
+        let device = wg.get_device(wireguard_uapi::DeviceInterface::from_name(device_name))?;
+        print_device(&device);
 
-    print_device(&device);
+        if Some(device_name) != device_names.last() {
+            println!();
+        }
+    }
 
     Ok(())
 }
