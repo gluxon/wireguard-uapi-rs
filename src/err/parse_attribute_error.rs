@@ -1,4 +1,3 @@
-use libc;
 use std::num::TryFromIntError;
 use std::string::FromUtf8Error;
 use thiserror::Error;

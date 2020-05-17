@@ -1,8 +1,5 @@
-use anyhow;
-use base64;
 use colored::*;
 use std::env;
-use wireguard_uapi;
 use wireguard_uapi::get::{AllowedIp, Device, Peer};
 
 fn main() -> anyhow::Result<()> {

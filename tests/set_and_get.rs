@@ -1,10 +1,5 @@
-use anyhow;
-use base64;
-use libc;
-use rand;
 use std::net::{IpAddr, Ipv6Addr};
 use std::time::Duration;
-use wireguard_uapi;
 use wireguard_uapi::{get, set, DeviceInterface, RouteSocket, WgSocket};
 
 fn get_random_ifname() -> String {

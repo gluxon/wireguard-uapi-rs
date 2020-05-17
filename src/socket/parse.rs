@@ -84,7 +84,7 @@ pub fn extend_device(
         match matching_last_peer {
             Some(matching_last_peer) => matching_last_peer
                 .allowed_ips
-                .append(&mut next_peer.allowed_ips.unwrap_or(vec![])),
+                .append(&mut next_peer.allowed_ips.unwrap_or_else(|| vec![])),
             None => device.peers.push(next_peer.build()?),
         }
     }
@@ -319,15 +319,16 @@ pub fn parse_in6_addr(buf: &[u8]) -> Result<Ipv6Addr, ParseAttributeError> {
             found: buf.len(),
         }
     })?;
-    let a = parse_nla_u16_be(&buf[0..2])?;
-    let b = parse_nla_u16_be(&buf[2..4])?;
-    let c = parse_nla_u16_be(&buf[4..6])?;
-    let d = parse_nla_u16_be(&buf[6..8])?;
-    let e = parse_nla_u16_be(&buf[8..10])?;
-    let f = parse_nla_u16_be(&buf[10..12])?;
-    let g = parse_nla_u16_be(&buf[12..14])?;
-    let h = parse_nla_u16_be(&buf[14..16])?;
-    Ok(Ipv6Addr::new(a, b, c, d, e, f, g, h))
+    Ok(Ipv6Addr::new(
+        parse_nla_u16_be(&buf[0..2])?,
+        parse_nla_u16_be(&buf[2..4])?,
+        parse_nla_u16_be(&buf[4..6])?,
+        parse_nla_u16_be(&buf[6..8])?,
+        parse_nla_u16_be(&buf[8..10])?,
+        parse_nla_u16_be(&buf[10..12])?,
+        parse_nla_u16_be(&buf[12..14])?,
+        parse_nla_u16_be(&buf[14..16])?,
+    ))
 }
 
 #[cfg(test)]
@@ -335,7 +336,6 @@ mod tests {
     use super::*;
     use crate::cmd::WgCmd;
     use anyhow::Error;
-    use base64;
     use neli::err::DeError;
     use neli::genl::Genlmsghdr;
     use neli::Nl;

@@ -259,7 +259,7 @@ pub fn create_set_device_messages(
         IncubatingDeviceFragment::split_off_peers(device)?;
 
     for peer in peers_to_add {
-        let public_key = peer.public_key.clone();
+        let public_key = peer.public_key;
         let (mut incubating_peer_fragment, allowed_ips_to_add) =
             IncubatingPeerFragment::split_off_allowed_ips(peer)?;
 
