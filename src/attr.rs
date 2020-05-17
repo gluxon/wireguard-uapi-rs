@@ -2,6 +2,26 @@ use neli::consts::NlAttrType;
 use neli::{impl_var, impl_var_base, impl_var_trait};
 use std::fmt;
 
+macro_rules! impl_bit_ops_for_nla {
+    ($name:ident) => {
+        impl std::ops::BitOr<u16> for $name {
+            type Output = Self;
+
+            fn bitor(self, rhs: u16) -> Self {
+                Self::from(u16::from(self) | rhs)
+            }
+        }
+
+        impl std::ops::BitAnd<u16> for $name {
+            type Output = Self;
+
+            fn bitand(self, rhs: u16) -> Self {
+                Self::from(u16::from(self) & rhs)
+            }
+        }
+    };
+}
+
 impl_var_trait!(
     NlaNested, u16, NlAttrType,
     Unspec => 0,
@@ -9,6 +29,8 @@ impl_var_trait!(
     // does not use it.
     Unused => 1
 );
+
+impl_bit_ops_for_nla!(NlaNested);
 
 // https://github.com/WireGuard/WireGuard/blob/62b335b56cc99312ccedfa571500fbef3756a623/src/uapi/wireguard.h#L147
 impl_var_trait!(
@@ -29,6 +51,8 @@ impl fmt::Display for WgDeviceAttribute {
         write!(f, "{:?}", self)
     }
 }
+
+impl_bit_ops_for_nla!(WgDeviceAttribute);
 
 // https://github.com/WireGuard/WireGuard/blob/62b335b56cc99312ccedfa571500fbef3756a623/src/uapi/wireguard.h#L165
 impl_var_trait!(
@@ -51,6 +75,8 @@ impl fmt::Display for WgPeerAttribute {
         write!(f, "{:?}", self)
     }
 }
+
+impl_bit_ops_for_nla!(WgPeerAttribute);
 
 // https://github.com/WireGuard/WireGuard/blob/62b335b56cc99312ccedfa571500fbef3756a623/src/uapi/wireguard.h#L181
 impl_var_trait!(
