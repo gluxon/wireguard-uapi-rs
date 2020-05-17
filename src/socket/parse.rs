@@ -1,4 +1,6 @@
-use crate::attr::{NlaNested, WgAllowedIpAttribute, WgDeviceAttribute, WgPeerAttribute};
+use crate::attr::{
+    NlaNested, WgAllowedIpAttribute, WgDeviceAttribute, WgPeerAttribute, NLA_TYPE_MASK,
+};
 use crate::err::{ParseAttributeError, ParseDeviceError, ParseIpAddrError, ParseSockAddrError};
 use crate::get::{AllowedIp, AllowedIpBuilder, Device, DeviceBuilder, Peer, PeerBuilder};
 use libc::{in6_addr, in_addr, AF_INET, AF_INET6};
@@ -13,7 +15,7 @@ pub fn parse_device(handle: AttrHandle<WgDeviceAttribute>) -> Result<Device, Par
     let mut device_builder = DeviceBuilder::default();
 
     for attr in handle.iter() {
-        match attr.nla_type {
+        match attr.nla_type.clone() & NLA_TYPE_MASK {
             WgDeviceAttribute::Unspec => {
                 // The embeddable-wg-library example ignores unspec, so we'll do the same.
             }
@@ -56,7 +58,10 @@ pub fn extend_device(
     handle: AttrHandle<WgDeviceAttribute>,
 ) -> Result<Device, ParseDeviceError> {
     let next_peers = {
-        let peers_attr = handle.get_attribute(WgDeviceAttribute::Peers).unwrap();
+        let peers_attr = handle
+            .iter()
+            .find(|attr| attr.nla_type.clone() & NLA_TYPE_MASK == WgDeviceAttribute::Peers)
+            .expect("Unable to find additional peers to coalesce.");
         let handle = peers_attr.get_nested_attributes::<NlaNested>()?;
 
         handle
@@ -104,7 +109,7 @@ pub fn parse_peer_builder(
     let mut peer_builder = PeerBuilder::default();
 
     for attr in handle.iter() {
-        match attr.nla_type {
+        match attr.nla_type.clone() & NLA_TYPE_MASK {
             WgPeerAttribute::Unspec => {}
             WgPeerAttribute::Flags => {}
             WgPeerAttribute::PublicKey => {
@@ -457,8 +462,9 @@ mod tests {
             0x01, 0x00, 0x02, 0x00, 0x00, 0x00, 0x08, 0x00, 0x02, 0x00, 0xc0, 0xa8, 0x00, 0x00,
         ];
         let genlmsghdr = create_test_genlmsghdr(&payload)?;
+        let device = parse_device(genlmsghdr.get_attr_handle())?;
 
-        assert!(parse_device(genlmsghdr.get_attr_handle()).is_err());
+        assert_eq!(device, get_device_from_man()?);
 
         Ok(())
     }

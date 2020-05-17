@@ -2,6 +2,13 @@ use neli::consts::NlAttrType;
 use neli::{impl_var, impl_var_base, impl_var_trait};
 use std::fmt;
 
+// As of neli 0.4.3, the NLA_F_NESTED flag needs to be added to newly created
+// attribute types and the NLA_TYPE_MASK mask needs to be applied to read types.
+// A future version of neli should do this automatically. At that point the
+// below consts can be deleted.
+pub(crate) const NLA_F_NESTED: u16 = libc::NLA_F_NESTED as u16;
+pub(crate) const NLA_TYPE_MASK: u16 = libc::NLA_TYPE_MASK as u16;
+
 macro_rules! impl_bit_ops_for_nla {
     ($name:ident) => {
         impl std::ops::BitOr<u16> for $name {

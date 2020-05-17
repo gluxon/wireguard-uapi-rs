@@ -1,3 +1,4 @@
+use crate::attr::NLA_F_NESTED;
 use crate::attr::{NlaNested, WgAllowedIpAttribute};
 use neli::err::SerError;
 use neli::nlattr::Nlattr;
@@ -23,7 +24,7 @@ impl<'a> TryFrom<&AllowedIp<'a>> for Nlattr<NlaNested, Vec<u8>> {
     type Error = SerError;
 
     fn try_from(allowed_ip: &AllowedIp) -> Result<Self, Self::Error> {
-        let mut nested = Nlattr::new::<Vec<u8>>(None, NlaNested::Unspec, vec![])?;
+        let mut nested = Nlattr::new::<Vec<u8>>(None, NlaNested::Unspec | NLA_F_NESTED, vec![])?;
 
         let family = match allowed_ip.ipaddr {
             IpAddr::V4(_) => libc::AF_INET as u16,

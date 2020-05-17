@@ -1,4 +1,5 @@
 use super::{AllowedIp, Device, Peer};
+use crate::attr::NLA_F_NESTED;
 use crate::attr::{NlaNested, WgDeviceAttribute, WgPeerAttribute};
 use crate::cmd::WgCmd;
 use crate::consts::WG_GENL_VERSION;
@@ -73,7 +74,7 @@ impl IncubatingDeviceFragment {
 
                 attrs
             },
-            peers: Nlattr::new::<Vec<u8>>(None, WgDeviceAttribute::Peers, vec![])?,
+            peers: Nlattr::new::<Vec<u8>>(None, WgDeviceAttribute::Peers | NLA_F_NESTED, vec![])?,
         };
 
         Ok((incubating_device, device.peers))
@@ -84,7 +85,7 @@ impl IncubatingDeviceFragment {
 
         Ok(Self {
             partial_device: vec![interface_attr],
-            peers: Nlattr::new::<Vec<u8>>(None, WgDeviceAttribute::Peers, vec![])?,
+            peers: Nlattr::new::<Vec<u8>>(None, WgDeviceAttribute::Peers | NLA_F_NESTED, vec![])?,
         })
     }
 
@@ -126,7 +127,8 @@ struct IncubatingPeerFragment {
 
 impl IncubatingPeerFragment {
     fn split_off_allowed_ips<'a>(peer: Peer<'a>) -> Result<(Self, Vec<AllowedIp<'a>>), SerError> {
-        let mut partial_peer = Nlattr::new::<Vec<u8>>(None, NlaNested::Unspec, vec![])?;
+        let mut partial_peer =
+            Nlattr::new::<Vec<u8>>(None, NlaNested::Unspec | NLA_F_NESTED, vec![])?;
 
         let public_key = Nlattr::new(None, WgPeerAttribute::PublicKey, peer.public_key.to_vec())?;
         partial_peer.add_nested_attribute(&public_key)?;
@@ -203,15 +205,21 @@ impl IncubatingPeerFragment {
 
         let incubating_peer_fragment = IncubatingPeerFragment {
             partial_peer,
-            allowed_ips: Nlattr::new::<Vec<u8>>(None, WgPeerAttribute::AllowedIps, vec![])?,
+            allowed_ips: Nlattr::new::<Vec<u8>>(
+                None,
+                WgPeerAttribute::AllowedIps | NLA_F_NESTED,
+                vec![],
+            )?,
         };
 
         Ok((incubating_peer_fragment, peer.allowed_ips))
     }
 
     fn from_public_key(public_key: &[u8; 32]) -> Result<Self, SerError> {
-        let mut partial_peer = Nlattr::new::<Vec<u8>>(None, NlaNested::Unspec, vec![])?;
-        let allowed_ips = Nlattr::new::<Vec<u8>>(None, WgPeerAttribute::AllowedIps, vec![])?;
+        let mut partial_peer =
+            Nlattr::new::<Vec<u8>>(None, NlaNested::Unspec | NLA_F_NESTED, vec![])?;
+        let allowed_ips =
+            Nlattr::new::<Vec<u8>>(None, WgPeerAttribute::AllowedIps | NLA_F_NESTED, vec![])?;
 
         let public_key = Nlattr::new(None, WgPeerAttribute::PublicKey, public_key.to_vec())?;
         partial_peer.add_nested_attribute(&public_key)?;
