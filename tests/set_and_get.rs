@@ -1,17 +1,23 @@
-use std::net::{IpAddr, Ipv6Addr};
-use std::time::Duration;
-use wireguard_uapi::{get, set, DeviceInterface, RouteSocket, WgSocket};
+#[cfg(target_os = "linux")]
+use {
+    std::net::{IpAddr, Ipv6Addr},
+    std::time::Duration,
+    wireguard_uapi::{get, set, DeviceInterface, RouteSocket, WgSocket},
+};
 
+#[cfg(target_os = "linux")]
 fn get_random_ifname() -> String {
     format!("wgtest{}", rand::random::<u16>())
 }
 
+#[cfg(target_os = "linux")]
 fn parse_device_key(buf: &[u8]) -> [u8; 32] {
     let mut key = [0u8; 32];
     key.copy_from_slice(&buf);
     key
 }
 
+#[cfg(target_os = "linux")]
 fn create_set_allowed_ips(allowed_ips: &[get::AllowedIp]) -> Vec<set::AllowedIp> {
     allowed_ips
         .iter()
