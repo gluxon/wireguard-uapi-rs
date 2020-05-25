@@ -1,7 +1,19 @@
-use colored::*;
-use wireguard_uapi::get::{AllowedIp, Device, Peer};
+#[cfg(target_os = "linux")]
+use {
+    colored::*,
+    wireguard_uapi::get::{AllowedIp, Device, Peer},
+};
 
 fn main() -> anyhow::Result<()> {
+    #[cfg(target_os = "linux")]
+    return main_linux();
+
+    #[cfg(not(target_os = "linux"))]
+    return Err(anyhow::anyhow!("This binary only runs on Linux"));
+}
+
+#[cfg(target_os = "linux")]
+fn main_linux() -> anyhow::Result<()> {
     let device_names = wireguard_uapi::RouteSocket::connect()?.list_device_names()?;
 
     let mut wg = wireguard_uapi::WgSocket::connect()?;
@@ -17,6 +29,7 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
+#[cfg(target_os = "linux")]
 fn print_device(device: &Device) {
     println!("{}: {}", "interface".green(), device.ifname.green());
     if let Some(public_key) = &device.public_key {
@@ -37,6 +50,7 @@ fn print_device(device: &Device) {
     }
 }
 
+#[cfg(target_os = "linux")]
 fn print_peer(peer: &Peer) {
     println!(
         "{}: {}",
@@ -57,6 +71,7 @@ fn print_peer(peer: &Peer) {
     println!();
 }
 
+#[cfg(target_os = "linux")]
 fn print_allowed_ip(allowed_ip: &AllowedIp) {
     print!(
         "{}{}{}",
