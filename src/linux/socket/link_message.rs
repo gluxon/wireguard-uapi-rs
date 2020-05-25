@@ -1,4 +1,4 @@
-use crate::consts::WG_GENL_NAME;
+use crate::linux::consts::WG_GENL_NAME;
 use libc::{IFLA_INFO_KIND, IFLA_LINKINFO};
 use neli::consts::{Arphrd, Ifla, NlmF, Rtm};
 use neli::err::SerError;

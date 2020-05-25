@@ -1,8 +1,10 @@
-use crate::attr::{
+use crate::linux::attr::{
     NlaNested, WgAllowedIpAttribute, WgDeviceAttribute, WgPeerAttribute, NLA_TYPE_MASK,
 };
-use crate::err::{ParseAttributeError, ParseDeviceError, ParseIpAddrError, ParseSockAddrError};
-use crate::get::{AllowedIp, AllowedIpBuilder, Device, DeviceBuilder, Peer, PeerBuilder};
+use crate::linux::err::{
+    ParseAttributeError, ParseDeviceError, ParseIpAddrError, ParseSockAddrError,
+};
+use crate::linux::get::{AllowedIp, AllowedIpBuilder, Device, DeviceBuilder, Peer, PeerBuilder};
 use libc::{in6_addr, in_addr, AF_INET, AF_INET6};
 use neli::nlattr::AttrHandle;
 use neli::nlattr::Nlattr;
@@ -334,7 +336,7 @@ pub fn parse_in6_addr(buf: &[u8]) -> Result<Ipv6Addr, ParseAttributeError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::cmd::WgCmd;
+    use crate::linux::cmd::WgCmd;
     use anyhow::Error;
     use neli::err::DeError;
     use neli::genl::Genlmsghdr;

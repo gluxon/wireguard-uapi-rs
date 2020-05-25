@@ -1,4 +1,4 @@
-use crate::attr::WgDeviceAttribute;
+use crate::linux::attr::WgDeviceAttribute;
 use neli::err::SerError;
 use neli::nlattr::Nlattr;
 use std::borrow::Cow;
@@ -20,6 +20,7 @@ impl<'a> DeviceInterface<'a> {
     }
 }
 
+#[cfg(target_os = "linux")]
 impl<'a> TryFrom<&DeviceInterface<'a>> for Nlattr<WgDeviceAttribute, Vec<u8>> {
     type Error = SerError;
 

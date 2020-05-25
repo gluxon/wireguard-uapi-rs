@@ -1,5 +1,5 @@
-use crate::attr::NLA_F_NESTED;
-use crate::attr::{NlaNested, WgAllowedIpAttribute};
+use crate::linux::attr::NLA_F_NESTED;
+use crate::linux::attr::{NlaNested, WgAllowedIpAttribute};
 use neli::err::SerError;
 use neli::nlattr::Nlattr;
 use std::convert::TryFrom;

@@ -1,6 +1,6 @@
 use super::list_device_names_utils;
 use super::{link_message, WireGuardDeviceLinkOperation};
-use crate::err::{ConnectError, LinkDeviceError, ListDevicesError};
+use crate::linux::err::{ConnectError, LinkDeviceError, ListDevicesError};
 use list_device_names_utils::PotentialWireGuardDeviceName;
 use neli::consts::{Ifla, NlFamily, Nlmsg};
 use neli::rtnl::Ifinfomsg;

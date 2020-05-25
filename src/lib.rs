@@ -1,11 +1,4 @@
-mod attr;
-mod cmd;
-mod consts;
-pub mod err;
-pub mod get;
-mod interface;
-pub mod set;
-mod socket;
-
-pub use interface::DeviceInterface;
-pub use socket::{RouteSocket, WgSocket};
+#[cfg(target_os = "linux")]
+pub mod linux;
+#[cfg(target_os = "linux")]
+pub use linux::{err, get, set, DeviceInterface, RouteSocket, WgSocket};

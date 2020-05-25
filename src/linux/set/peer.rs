@@ -1,4 +1,4 @@
-use crate::set::AllowedIp;
+use crate::linux::set::AllowedIp;
 use std::net::SocketAddr;
 
 #[derive(Clone, Debug, PartialEq)]

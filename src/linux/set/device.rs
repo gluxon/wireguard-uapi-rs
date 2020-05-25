@@ -1,5 +1,5 @@
-use crate::set::Peer;
-use crate::DeviceInterface;
+use crate::linux::set::Peer;
+use crate::linux::DeviceInterface;
 use std::borrow::Cow;
 
 #[derive(Clone, Debug, PartialEq)]
