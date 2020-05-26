@@ -1,6 +1,6 @@
 use derive_builder::Builder;
 use std::net::{IpAddr, SocketAddr};
-use std::time::Duration;
+use std::{str::FromStr, time::Duration};
 
 #[derive(Builder, Debug, PartialEq)]
 pub struct Device {
@@ -39,4 +39,26 @@ pub struct AllowedIp {
     pub family: u16,
     pub ipaddr: IpAddr,
     pub cidr_mask: u8,
+}
+
+#[derive(Debug)]
+pub struct ParseAllowedIpError;
+
+impl FromStr for AllowedIp {
+    type Err = ParseAllowedIpError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut tokens = s.splitn(2, '/');
+        let ipaddr = tokens.next().unwrap().parse().unwrap();
+        let cidr_mask: u8 = tokens.next().unwrap().parse().unwrap();
+
+        Ok(AllowedIp {
+            family: match ipaddr {
+                IpAddr::V4(_) => 2,
+                IpAddr::V6(_) => 10,
+            },
+            ipaddr,
+            cidr_mask,
+        })
+    }
 }
