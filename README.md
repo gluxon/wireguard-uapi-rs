@@ -1,6 +1,6 @@
 # wireguard-uapi-rs
 
-[![Build Status](https://travis-ci.com/gluxon/wireguard-uapi-rs.svg?branch=develop)](https://travis-ci.com/gluxon/wireguard-uapi-rs)
+[![Build Status](https://github.com/gluxon/wireguard-uapi-rs/workflows/Rust/badge.svg?branch=develop)](https://github.com/gluxon/wireguard-uapi-rs/actions?query=workflow%3ARust)
 [![Crates version](https://img.shields.io/crates/v/wireguard-uapi.svg)](https://crates.io/crates/wireguard-uapi)
 [![docs.rs](https://docs.rs/wireguard-uapi/badge.svg?version=0.2.0)](https://docs.rs/wireguard-uapi)
 ![MIT](https://img.shields.io/github/license/gluxon/wireguard-uapi-rs)
