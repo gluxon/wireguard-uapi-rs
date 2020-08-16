@@ -36,7 +36,10 @@ jobs:
         run: cargo fmt --all -- --check
 
   test:
-    runs-on: ubuntu-20.04
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-16.04, ubuntu-18.04, ubuntu-20.04]
     steps:
       - uses: actions/checkout@v2
       - name: Install WireGuard
