@@ -53,7 +53,7 @@ impl WgSocket {
             DeviceInterface::Name(name) => {
                 Some(name.len())
                     .filter(|&len| 0 < len && len < IFNAMSIZ)
-                    .ok_or_else(|| GetDeviceError::InvalidInterfaceName)?;
+                    .ok_or(GetDeviceError::InvalidInterfaceName)?;
                 name.as_ref().serialize(&mut mem)?;
                 Nlattr::new(None, WgDeviceAttribute::Ifname, mem.as_ref())?
             }
