@@ -30,7 +30,7 @@ struct IncubatingDeviceFragment {
 }
 
 impl IncubatingDeviceFragment {
-    fn split_off_peers<'a>(device: Device<'a>) -> Result<(Self, Vec<Peer<'a>>), SerError> {
+    fn split_off_peers(device: Device<'_>) -> Result<(Self, Vec<Peer<'_>>), SerError> {
         let incubating_device = IncubatingDeviceFragment {
             partial_device: {
                 let mut attrs = vec![];
@@ -128,7 +128,7 @@ struct IncubatingPeerFragment {
 }
 
 impl IncubatingPeerFragment {
-    fn split_off_allowed_ips<'a>(peer: Peer<'a>) -> Result<(Self, Vec<AllowedIp<'a>>), SerError> {
+    fn split_off_allowed_ips(peer: Peer<'_>) -> Result<(Self, Vec<AllowedIp<'_>>), SerError> {
         let mut partial_peer =
             Nlattr::new::<Vec<u8>>(None, NlaNested::Unspec | NLA_F_NESTED, vec![])?;
 
