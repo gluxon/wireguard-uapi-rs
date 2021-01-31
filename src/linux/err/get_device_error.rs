@@ -1,4 +1,4 @@
-use crate::err::ParseDeviceError;
+use super::ParseDeviceError;
 use neli::err::{NlError, SerError};
 use thiserror::Error;
 
