@@ -22,6 +22,7 @@ fn create_set_allowed_ips(allowed_ips: &[get::AllowedIp]) -> Vec<set::AllowedIp>
         .collect()
 }
 
+#[cfg(target_os = "linux")]
 #[test]
 fn simple() -> anyhow::Result<()> {
     let mut test_device = get::Device {
@@ -122,6 +123,7 @@ fn simple() -> anyhow::Result<()> {
     Ok(())
 }
 
+#[cfg(target_os = "linux")]
 #[test]
 fn set_ifname_has_proper_padding() -> anyhow::Result<()> {
     let ifname = get_random_ifname();
@@ -146,6 +148,7 @@ fn set_ifname_has_proper_padding() -> anyhow::Result<()> {
     Ok(())
 }
 
+#[cfg(target_os = "linux")]
 #[test]
 fn large_peer() -> anyhow::Result<()> {
     let mut test_device = get::Device {

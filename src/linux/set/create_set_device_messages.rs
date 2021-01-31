@@ -1,10 +1,10 @@
 use super::{AllowedIp, Device, Peer};
-use crate::attr::NLA_F_NESTED;
-use crate::attr::{NlaNested, WgDeviceAttribute, WgPeerAttribute};
-use crate::cmd::WgCmd;
-use crate::consts::WG_GENL_VERSION;
-use crate::socket::NlWgMsgType;
-use crate::DeviceInterface;
+use crate::linux::attr::NLA_F_NESTED;
+use crate::linux::attr::{NlaNested, WgDeviceAttribute, WgPeerAttribute};
+use crate::linux::cmd::WgCmd;
+use crate::linux::consts::WG_GENL_VERSION;
+use crate::linux::socket::NlWgMsgType;
+use crate::linux::DeviceInterface;
 use neli::consts::NlmF;
 use neli::err::SerError;
 use neli::genl::Genlmsghdr;

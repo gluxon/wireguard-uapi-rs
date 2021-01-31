@@ -1,4 +1,4 @@
-use crate::attr::WgDeviceAttribute;
+use crate::linux::attr::WgDeviceAttribute;
 use neli::err::SerError;
 use neli::nlattr::Nlattr;
 use std::borrow::Cow;

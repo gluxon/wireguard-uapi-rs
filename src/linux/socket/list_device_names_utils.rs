@@ -47,7 +47,7 @@ pub fn parse_ifinfomsg(
 
                 if linkinfo.rta_type == libc::IFLA_INFO_KIND {
                     let info_kind = parse_nla_nul_string(&linkinfo.rta_payload)?;
-                    if info_kind == crate::consts::WG_GENL_NAME {
+                    if info_kind == crate::linux::consts::WG_GENL_NAME {
                         is_wireguard = true;
                     }
                 }

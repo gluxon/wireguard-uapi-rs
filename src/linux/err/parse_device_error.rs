@@ -1,4 +1,4 @@
-use crate::err::ParseAttributeError;
+use crate::linux::err::ParseAttributeError;
 use neli::err::{DeError, NlError};
 use thiserror::Error;
 
