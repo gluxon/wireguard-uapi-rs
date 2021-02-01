@@ -8,9 +8,18 @@ repository = "https://github.com/gluxon/wireguard-uapi-rs"
 description = "Control WireGuard interfaces."
 readme = "README.md"
 
+[[example]]
+name = "xplatform"
+required-features = ["xplatform"]
+
+[features]
+default = []
+xplatform = ["hex"]
+
 [dependencies]
 derive_builder = "0.7.1"
 thiserror = "1.0"
+hex = { version = "0.3.1", optional = true }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 neli = "=0.4.3"
