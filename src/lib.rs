@@ -4,4 +4,6 @@ pub mod linux;
 pub use linux::{err, set, DeviceInterface, RouteSocket, WgSocket};
 
 pub mod get;
-pub use linux::{err, get, set, DeviceInterface, RouteSocket, WgSocket};
+
+#[cfg(feature = "xplatform")]
+pub mod xplatform;
