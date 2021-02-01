@@ -1,8 +1,8 @@
+use crate::get;
 use crate::linux::attr::WgDeviceAttribute;
 use crate::linux::cmd::WgCmd;
 use crate::linux::consts::{WG_GENL_NAME, WG_GENL_VERSION};
 use crate::linux::err::{ConnectError, GetDeviceError, SetDeviceError};
-use crate::linux::get;
 use crate::linux::set;
 use crate::linux::set::create_set_device_messages;
 use crate::linux::socket::parse::*;
