@@ -70,3 +70,44 @@ impl Display for GetKey {
         }
     }
 }
+
+pub(crate) enum SetKey {
+    PrivateKey,
+    ListenPort,
+    Fwmark,
+    ReplacePeers,
+    PublicKey,
+    Remove,
+    UpdateOnly,
+    PresharedKey,
+    Endpoint,
+    PersistentKeepaliveInterval,
+    ReplaceAllowedIps,
+    AllowedIp,
+}
+
+impl From<&SetKey> for &'static str {
+    fn from(set_key: &SetKey) -> &'static str {
+        match set_key {
+            SetKey::PrivateKey => "private_key",
+            SetKey::ListenPort => "listen_port",
+            SetKey::Fwmark => "fwmark",
+            SetKey::ReplacePeers => "replace_peers",
+            SetKey::PublicKey => "public_key",
+            SetKey::Remove => "remove",
+            SetKey::UpdateOnly => "update_only",
+            SetKey::PresharedKey => "preshared_key",
+            SetKey::Endpoint => "endpoint",
+            SetKey::PersistentKeepaliveInterval => "persistent_keepalive_interval",
+            SetKey::ReplaceAllowedIps => "replace_allowed_ips",
+            SetKey::AllowedIp => "allowed_ip",
+        }
+    }
+}
+
+impl Display for SetKey {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s: &'static str = self.into();
+        f.write_str(s)
+    }
+}
