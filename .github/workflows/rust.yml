@@ -48,14 +48,13 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --tests --verbose
+          args: --tests
       - name: Apply CAP_NET_ADMIN to tests
         run: find ./target/debug/deps -maxdepth 1 -type f -executable | xargs -n 1 sudo setcap CAP_NET_ADMIN=+eip
       - name: Run tests
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --verbose
 
   # Boilerplate from: https://github.com/marketplace/actions/rust-grcov
   # This is set up as a separate job since nightly Rust is required. When
@@ -76,7 +75,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --tests --verbose
+          args: --tests
         env:
           CARGO_INCREMENTAL: '0'
           RUSTFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
@@ -88,7 +87,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --verbose --no-fail-fast
+          args: --no-fail-fast
         env:
           CARGO_INCREMENTAL: '0'
           RUSTFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
