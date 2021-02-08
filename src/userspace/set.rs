@@ -323,4 +323,37 @@ mod tests {
 
         assert_eq!(expected, actual);
     }
+
+    // Simple comparisons to make default, partial_eq, and debug derive code covered.
+    #[test]
+    fn cover_derives() {
+        let device1 = Device::default();
+        let device2 = Device::default();
+        assert_eq!(device1, device2);
+        format!("{:?}", device1);
+
+        let peer1 = Peer::from_public_key([
+            0xb8, 0x59, 0x96, 0xfe, 0xcc, 0x9c, 0x7f, 0x1f, 0xc6, 0xd2, 0x57, 0x2a, 0x76, 0xed,
+            0xa1, 0x1d, 0x59, 0xbc, 0xd2, 0x0b, 0xe8, 0xe5, 0x43, 0xb1, 0x5c, 0xe4, 0xbd, 0x85,
+            0xa8, 0xe7, 0x5a, 0x33,
+        ]);
+        let peer2 = Peer::from_public_key([
+            0xb8, 0x59, 0x96, 0xfe, 0xcc, 0x9c, 0x7f, 0x1f, 0xc6, 0xd2, 0x57, 0x2a, 0x76, 0xed,
+            0xa1, 0x1d, 0x59, 0xbc, 0xd2, 0x0b, 0xe8, 0xe5, 0x43, 0xb1, 0x5c, 0xe4, 0xbd, 0x85,
+            0xa8, 0xe7, 0x5a, 0x33,
+        ]);
+        assert_eq!(peer1, peer2);
+        format!("{:?}", peer1);
+
+        let allowed_ip1 = AllowedIp {
+            ipaddr: "::1".parse().unwrap(),
+            cidr_mask: 64,
+        };
+        let allowed_ip2 = AllowedIp {
+            ipaddr: "::1".parse().unwrap(),
+            cidr_mask: 64,
+        };
+        assert_eq!(allowed_ip1, allowed_ip2);
+        format!("{:?}", allowed_ip1);
+    }
 }
