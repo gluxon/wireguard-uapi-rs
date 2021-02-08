@@ -282,4 +282,45 @@ mod tests {
 
         assert_eq!(expected, actual);
     }
+
+    #[test]
+    fn serialize_update_only() {
+        let expected = [
+            "private_key=e84b5a6d2717c1003a13b431570353dbaca9146cf150c5f8575680feba52027a",
+            "public_key=b85996fecc9c7f1fc6d2572a76eda11d59bcd20be8e543b15ce4bd85a8e75a33",
+            "update_only=true",
+            "endpoint=[abcd:23::33%2]:51820",
+            "replace_allowed_ips=true",
+            "allowed_ip=192.168.4.4/32",
+            "",
+        ]
+        .join("\n");
+
+        let set_request = Device {
+            private_key: Some([
+                0xe8, 0x4b, 0x5a, 0x6d, 0x27, 0x17, 0xc1, 0x00, 0x3a, 0x13, 0xb4, 0x31, 0x57, 0x03,
+                0x53, 0xdb, 0xac, 0xa9, 0x14, 0x6c, 0xf1, 0x50, 0xc5, 0xf8, 0x57, 0x56, 0x80, 0xfe,
+                0xba, 0x52, 0x02, 0x7a,
+            ]),
+            peers: vec![{
+                let mut peer = Peer::from_public_key([
+                    0xb8, 0x59, 0x96, 0xfe, 0xcc, 0x9c, 0x7f, 0x1f, 0xc6, 0xd2, 0x57, 0x2a, 0x76,
+                    0xed, 0xa1, 0x1d, 0x59, 0xbc, 0xd2, 0x0b, 0xe8, 0xe5, 0x43, 0xb1, 0x5c, 0xe4,
+                    0xbd, 0x85, 0xa8, 0xe7, 0x5a, 0x33,
+                ]);
+                peer.update_only = Some(true);
+                peer.replace_allowed_ips = Some(true);
+                peer.allowed_ips.push(AllowedIp {
+                    ipaddr: "192.168.4.4".parse().unwrap(),
+                    cidr_mask: 32,
+                });
+                peer.endpoint = Some("[abcd:23::33%2]:51820".parse().unwrap());
+                peer
+            }],
+            ..Default::default()
+        };
+        let actual = format!("{}", set_request);
+
+        assert_eq!(expected, actual);
+    }
 }
