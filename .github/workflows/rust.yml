@@ -56,3 +56,46 @@ jobs:
         with:
           command: test
           args: --verbose
+
+  # Boilerplate from: https://github.com/marketplace/actions/rust-grcov
+  # This is set up as a separate job since nightly Rust is required. When
+  # `-Zinstrument-coverage` is stable, combine this with the test job.
+  # https://github.com/rust-lang/rust/issues/79121
+  coverage:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install WireGuard
+        run: sudo apt update && sudo apt install wireguard-dkms
+      - name: Setup nightly Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --tests --verbose
+        env:
+          CARGO_INCREMENTAL: '0'
+          RUSTFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
+          RUSTDOCFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
+      - name: Apply CAP_NET_ADMIN to tests
+        run: find ./target/debug/deps -maxdepth 1 -type f -executable | xargs -n 1 sudo setcap CAP_NET_ADMIN=+eip
+
+      - name: Run tests
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --verbose --no-fail-fast
+        env:
+          CARGO_INCREMENTAL: '0'
+          RUSTFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
+          RUSTDOCFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
+      - id: coverage
+        uses: actions-rs/grcov@v0.1
+
+      - uses: codecov/codecov-action@v1
+        with:
+          files: ${{ steps.coverage.outputs.report }}
