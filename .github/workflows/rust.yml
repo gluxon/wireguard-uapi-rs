@@ -99,3 +99,17 @@ jobs:
       - uses: codecov/codecov-action@v1
         with:
           files: ${{ steps.coverage.outputs.report }}
+
+  test_macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install wireguard-go
+        run: brew install wireguard-tools
+      - name: Run tests
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --all-features
+        env:
+          CARGO_TARGET_X86_64_APPLE_DARWIN_RUNNER: sudo
