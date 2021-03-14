@@ -4,7 +4,6 @@ use crate::userspace::error::SetDeviceError;
 use crate::userspace::parser::parse;
 use crate::userspace::set;
 use std::io::BufRead;
-use std::io::Read;
 use std::io::Write;
 use std::os::unix::net::UnixStream;
 use std::path::Path;
@@ -25,10 +24,11 @@ impl<P: AsRef<Path>> Client<P> {
         let mut stream = UnixStream::connect(&self.path)?;
 
         stream.write_all(GET_CMD.as_bytes())?;
-        let mut response = String::new();
-        stream.read_to_string(&mut response)?;
 
-        Ok(parse(&response).unwrap())
+        let reader = std::io::BufReader::new(stream);
+        let response_lines = reader.lines();
+
+        Ok(parse(response_lines)?)
     }
 
     pub fn set(&self, set_request: set::Device) -> Result<(), SetDeviceError> {
