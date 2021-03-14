@@ -18,4 +18,6 @@ pub enum SetDeviceError {
     EmptyResponse,
     #[error("Failed to parse response: `{0}`")]
     InvalidResponse(String),
+    #[error("Invalid end of response. Expected empty line but saw: `{0}`")]
+    InvalidEndOfResponse(String),
 }
