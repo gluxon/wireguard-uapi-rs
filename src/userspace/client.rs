@@ -8,7 +8,7 @@ use std::io::Write;
 use std::os::unix::net::UnixStream;
 use std::path::Path;
 
-const GET_CMD: &str = "get=1\n";
+const GET_CMD: &str = "get=1\n\n";
 const SET_CMD: &str = "set=1\n";
 
 pub struct Client<P: AsRef<Path>> {
