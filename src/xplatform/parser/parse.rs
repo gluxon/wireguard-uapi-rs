@@ -9,6 +9,9 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum ParseGetResponseError {
+    #[error("Failed to read line from socket: `{0}`")]
+    ReadLineIoError(#[source] std::io::Error),
+
     #[error("Received non-zero error number in response: `{0}`")]
     ServerError(String),
     #[error("Received incomplete response")]
@@ -74,7 +77,9 @@ impl From<ParseKeyError> for ParseGetResponseError {
     }
 }
 
-pub(crate) fn parse(response: &str) -> Result<get::Device, ParseGetResponseError> {
+pub(crate) fn parse(
+    lines: impl Iterator<Item = Result<String, std::io::Error>>,
+) -> Result<get::Device, ParseGetResponseError> {
     let initial_state = {
         let mut device_builder = get::DeviceBuilder::default();
         device_builder.ifindex(0);
@@ -93,8 +98,13 @@ pub(crate) fn parse(response: &str) -> Result<get::Device, ParseGetResponseError
     }
 }
 
-fn process_line(state: ParseState, line: &str) -> Result<ParseState, ParseGetResponseError> {
+fn process_line(
+    state: ParseState,
+    line: std::io::Result<String>,
+) -> Result<ParseState, ParseGetResponseError> {
     type ParseErr = ParseGetResponseError;
+
+    let line = line.map_err(ParseErr::ReadLineIoError)?;
 
     // An empty line signifies the end of a "get" response.
     if line.is_empty() {
@@ -355,7 +365,7 @@ mod tests {
             }],
         };
 
-        let actual = parse(&response)?;
+        let actual = parse(response.lines().map(String::from).map(Ok))?;
         assert_eq!(actual, expected);
 
         Ok(())
@@ -380,7 +390,7 @@ mod tests {
             peers: vec![],
         };
 
-        let actual = parse(&response)?;
+        let actual = parse(response.lines().map(String::from).map(Ok))?;
         assert_eq!(actual, expected);
 
         Ok(())
@@ -491,7 +501,7 @@ mod tests {
             ],
         };
 
-        let actual = parse(&response)?;
+        let actual = parse(response.lines().map(String::from).map(Ok))?;
         assert_eq!(actual, expected);
 
         Ok(())
