@@ -5,6 +5,7 @@ use crate::xplatform::protocol::{GetKey, ParseKeyError};
 use std::net::AddrParseError;
 use std::num::ParseIntError;
 use std::{str::FromStr, time::Duration};
+use take_until::TakeUntilExt;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -87,7 +88,15 @@ pub(crate) fn parse(
         device_builder.fwmark(0);
         ParseState::Initial(device_builder)
     };
-    let parse_state = response.lines().try_fold(initial_state, process_line)?;
+    let parse_state = lines
+        // WireGuard xplatform implementations signify the end of a response
+        // with an empty newline. Stop reading beyond this point to avoid
+        // hanging.
+        //
+        // The rust standard library may include take_until in the future.
+        // https://github.com/rust-lang/rust/issues/62208
+        .take_until(|result| matches!(result.as_ref().map(String::as_str), Ok("")))
+        .try_fold(initial_state, process_line)?;
 
     match parse_state {
         ParseState::Initial(_) => Err(ParseGetResponseError::EmptyResponse),
