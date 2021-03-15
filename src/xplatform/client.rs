@@ -16,6 +16,7 @@ pub struct Client<P: AsRef<Path>> {
 }
 
 impl<P: AsRef<Path>> Client<P> {
+    /// A path to the unix socket file. Ex: `/var/run/wireguard/utun0.sock`
     pub fn create(path: P) -> Self {
         Self { path }
     }
