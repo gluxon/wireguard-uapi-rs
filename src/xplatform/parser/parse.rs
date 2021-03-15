@@ -60,7 +60,7 @@ pub enum ParseGetResponseError {
     InvalidProtocolVersion(#[source] ParseIntError),
 
     // Invalid parser state transition errors
-    #[error("Expected `private_key=...`. Observed key: `{0}`")]
+    #[error("Expected `private_key=...` or `listen_port=...`. Observed key: `{0}`")]
     InvalidStartOfResponse(GetKey),
     #[error("private_key was ambiguously specified twice in response.")]
     AmbiguousPrivateKey,
@@ -153,7 +153,11 @@ fn process_line(
                 device_builder.private_key(Some(private_key));
                 Ok(ParseState::InterfaceLevelKeys(device_builder))
             }
-
+            GetKey::ListenPort => {
+                let listen_port = raw_val.parse().map_err(ParseErr::InvalidListenPort)?;
+                device_builder.listen_port(listen_port);
+                Ok(ParseState::InterfaceLevelKeys(device_builder))
+            }
             GetKey::Errno => match raw_val {
                 "0" => Ok(ParseState::Initial(device_builder)),
                 _ => Err(ParseErr::ServerError(raw_val.to_string())),
