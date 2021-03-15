@@ -3,7 +3,7 @@
 [![Build Status](https://github.com/gluxon/wireguard-uapi-rs/workflows/Rust/badge.svg?branch=develop)](https://github.com/gluxon/wireguard-uapi-rs/actions?query=workflow%3ARust)
 [![codecov](https://codecov.io/gh/gluxon/wireguard-uapi-rs/branch/develop/graph/badge.svg)](https://codecov.io/gh/gluxon/wireguard-uapi-rs)
 [![Crates version](https://img.shields.io/crates/v/wireguard-uapi.svg)](https://crates.io/crates/wireguard-uapi)
-[![docs.rs](https://docs.rs/wireguard-uapi/badge.svg?version=0.2.0)](https://docs.rs/wireguard-uapi)
+[![docs.rs](https://docs.rs/wireguard-uapi/badge.svg)](https://docs.rs/wireguard-uapi)
 ![MIT](https://img.shields.io/github/license/gluxon/wireguard-uapi-rs)
 
 This library implements the [WireGuard Netlink API](https://git.zx2c4.com/WireGuard/tree/src/uapi/wireguard.h) in Rust for Linux.
