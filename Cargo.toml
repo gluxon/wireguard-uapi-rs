@@ -8,6 +8,9 @@ repository = "https://github.com/gluxon/wireguard-uapi-rs"
 description = "Control WireGuard interfaces."
 readme = "README.md"
 
+[package.metadata.docs.rs]
+all-features = true
+
 [[example]]
 name = "xplatform"
 required-features = ["xplatform"]
