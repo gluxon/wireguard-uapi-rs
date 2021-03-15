@@ -82,8 +82,8 @@ pub struct Peer {
     /// preshared-key should be removed.
     pub preshared_key: Option<[u8; 32]>,
 
-    /// The value for this key is either IP:port for IPv4 or [IP]:port for IPv6,
-    /// indicating the endpoint of the previously added peer entry.
+    /// The value for this key is either IP:port for IPv4 or \[IP\]:port for
+    /// IPv6, indicating the endpoint of the previously added peer entry.
     pub endpoint: Option<SocketAddr>,
 
     /// The value for this is a decimal-string integer corresponding to the
