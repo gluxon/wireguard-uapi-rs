@@ -35,7 +35,7 @@ jobs:
       - name: Run Rustfmt
         run: cargo fmt --all -- --check
 
-  test:
+  test_linux:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -61,7 +61,7 @@ jobs:
   # This is set up as a separate job since nightly Rust is required. When
   # `-Zinstrument-coverage` is stable, combine this with the test job.
   # https://github.com/rust-lang/rust/issues/79121
-  coverage:
+  test_linux_coverage:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
