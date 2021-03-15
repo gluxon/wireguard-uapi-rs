@@ -113,3 +113,31 @@ jobs:
           args: --all-features
         env:
           CARGO_TARGET_X86_64_APPLE_DARWIN_RUNNER: sudo
+
+  # Similar to the plain "coverage" job, this is a separate job since it requires nightly Rust.
+  test_macos_coverage:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install wireguard-go
+        run: brew install wireguard-tools
+      - name: Setup nightly Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+      - name: Run tests
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --all-features --no-fail-fast
+        env:
+          CARGO_TARGET_X86_64_APPLE_DARWIN_RUNNER: sudo
+          CARGO_INCREMENTAL: '0'
+          RUSTFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
+          RUSTDOCFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
+      - id: coverage
+        uses: actions-rs/grcov@v0.1
+      - uses: codecov/codecov-action@v1
+        with:
+          files: ${{ steps.coverage.outputs.report }}
