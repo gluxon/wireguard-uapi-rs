@@ -287,7 +287,7 @@ pub fn create_set_device_messages(
                 messages.push(device_message);
 
                 incubating_device_fragment = IncubatingDeviceFragment::from_interface(&interface)?;
-                incubating_peer_fragment = IncubatingPeerFragment::from_public_key(&public_key)?;
+                incubating_peer_fragment = IncubatingPeerFragment::from_public_key(public_key)?;
             }
 
             incubating_peer_fragment

@@ -13,7 +13,7 @@ fn get_random_ifname() -> String {
 #[cfg(target_os = "linux")]
 fn parse_device_key(buf: &[u8]) -> [u8; 32] {
     let mut key = [0u8; 32];
-    key.copy_from_slice(&buf);
+    key.copy_from_slice(buf);
     key
 }
 

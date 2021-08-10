@@ -233,7 +233,7 @@ pub fn parse_nla_u16_be(buf: &[u8]) -> Result<u16, ParseAttributeError> {
     })?;
 
     let mut arr = [0u8; 2];
-    arr.copy_from_slice(&buf);
+    arr.copy_from_slice(buf);
     Ok(u16::from_be_bytes(arr))
 }
 
@@ -260,7 +260,7 @@ pub fn parse_device_key(buf: &[u8]) -> Result<[u8; 32], ParseAttributeError> {
     })?;
 
     let mut key = [0u8; 32];
-    key.copy_from_slice(&buf);
+    key.copy_from_slice(buf);
     Ok(key)
 }
 
