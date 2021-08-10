@@ -322,7 +322,7 @@ pub fn parse_device_key(buf: &[u8]) -> Option<[u8; 32]> {
     }
 
     let mut key = [0u8; 32];
-    key.copy_from_slice(&buf);
+    key.copy_from_slice(buf);
     Some(key)
 }
 

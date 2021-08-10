@@ -33,7 +33,7 @@ fn print_device(device: &Device) {
 
     for peer in &device.peers {
         println!();
-        print_peer(&peer);
+        print_peer(peer);
     }
 }
 
