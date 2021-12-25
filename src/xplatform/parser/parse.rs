@@ -1,6 +1,6 @@
 use super::state::{ParsePeerState, ParseState};
 use crate::get;
-use crate::get::ParseAllowedIpError;
+use crate::get::{DeviceBuilderError, ParseAllowedIpError, PeerBuilderError};
 use crate::xplatform::protocol::{GetKey, ParseKeyError};
 use std::net::AddrParseError;
 use std::num::ParseIntError;
@@ -28,9 +28,9 @@ pub enum ParseGetResponseError {
     MissingValueForKey(GetKey),
 
     #[error("{0}")]
-    InternalBuildGetDeviceError(String),
+    InternalBuildGetDeviceError(DeviceBuilderError),
     #[error("{0}")]
-    InternalBuildGetPeerError(String),
+    InternalBuildGetPeerError(PeerBuilderError),
 
     #[error("Invalid private_key")]
     InvalidPrivateKey,
