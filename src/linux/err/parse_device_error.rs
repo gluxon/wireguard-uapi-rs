@@ -2,6 +2,8 @@ use crate::linux::err::ParseAttributeError;
 use neli::err::{DeError, NlError};
 use thiserror::Error;
 
+use crate::get::{AllowedIpBuilderError, DeviceBuilderError, PeerBuilderError};
+
 #[derive(Error, Debug)]
 pub enum ParseDeviceError {
     #[error(transparent)]
@@ -24,6 +26,15 @@ pub enum ParseDeviceError {
 
     #[error("Encountered unknown allowed ip attribute id {}", id)]
     UnknownAllowedIpAttributeError { id: u16 },
+
+    #[error(transparent)]
+    AllowedIpBuilderError(#[from] AllowedIpBuilderError),
+
+    #[error(transparent)]
+    DeviceBuilderError(#[from] DeviceBuilderError),
+
+    #[error(transparent)]
+    PeerBuilderError(#[from] PeerBuilderError),
 }
 
 impl From<NlError> for ParseDeviceError {

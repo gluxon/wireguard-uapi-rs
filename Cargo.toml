@@ -20,7 +20,7 @@ default = []
 xplatform = ["hex", "take-until"]
 
 [dependencies]
-derive_builder = "0.7.1"
+derive_builder = "0.10.2"
 thiserror = "1.0"
 hex = { version = "0.4.3", optional = true }
 take-until = { version = " 0.1.0", optional = true }
