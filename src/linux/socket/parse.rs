@@ -84,7 +84,7 @@ pub fn extend_device(
         match matching_last_peer {
             Some(matching_last_peer) => matching_last_peer
                 .allowed_ips
-                .append(&mut next_peer.allowed_ips.unwrap_or_else(Vec::new)),
+                .append(&mut next_peer.allowed_ips.unwrap_or_default()),
             None => device.peers.push(next_peer.build()?),
         }
     }
