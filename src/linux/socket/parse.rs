@@ -225,7 +225,7 @@ create_parse_nla_int!(parse_nla_u64, u64, size_of::<u64>());
 create_parse_nla_int!(parse_nla_i64, i64, size_of::<i64>());
 
 pub fn parse_nla_u16_be(buf: &[u8]) -> Result<u16, ParseAttributeError> {
-    Some(buf.len()).filter(|&len| len == 2).ok_or_else(|| {
+    Some(buf.len()).filter(|&len| len == 2).ok_or({
         ParseAttributeError::StaticLengthError {
             expected: 2,
             found: buf.len(),
@@ -252,7 +252,7 @@ pub fn parse_nla_nul_string(payload: &[u8]) -> Result<String, ParseAttributeErro
 }
 
 pub fn parse_device_key(buf: &[u8]) -> Result<[u8; 32], ParseAttributeError> {
-    Some(buf.len()).filter(|&len| len == 32).ok_or_else(|| {
+    Some(buf.len()).filter(|&len| len == 32).ok_or({
         ParseAttributeError::StaticLengthError {
             expected: 32,
             found: buf.len(),
@@ -280,7 +280,7 @@ pub fn parse_sockaddr_in(buf: &[u8]) -> Result<SocketAddr, ParseAttributeError> 
 }
 
 pub fn parse_last_handshake_time(buf: &[u8]) -> Result<Duration, ParseAttributeError> {
-    Some(buf.len()).filter(|&len| len == 16).ok_or_else(|| {
+    Some(buf.len()).filter(|&len| len == 16).ok_or({
         ParseAttributeError::StaticLengthError {
             expected: 16,
             found: buf.len(),
@@ -302,7 +302,7 @@ pub fn parse_last_handshake_time(buf: &[u8]) -> Result<Duration, ParseAttributeE
 
 pub fn parse_in_addr(buf: &[u8]) -> Result<Ipv4Addr, ParseAttributeError> {
     // https://linux.die.net/man/7/ip
-    Some(buf.len()).filter(|&len| len == 4).ok_or_else(|| {
+    Some(buf.len()).filter(|&len| len == 4).ok_or({
         ParseAttributeError::StaticLengthError {
             expected: 4,
             found: buf.len(),
@@ -313,7 +313,7 @@ pub fn parse_in_addr(buf: &[u8]) -> Result<Ipv4Addr, ParseAttributeError> {
 
 pub fn parse_in6_addr(buf: &[u8]) -> Result<Ipv6Addr, ParseAttributeError> {
     // http://man7.org/linux/man-pages/man7/ipv6.7.html
-    Some(buf.len()).filter(|&len| len == 16).ok_or_else(|| {
+    Some(buf.len()).filter(|&len| len == 16).ok_or({
         ParseAttributeError::StaticLengthError {
             expected: 16,
             found: buf.len(),
