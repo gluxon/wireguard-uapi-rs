@@ -4,8 +4,9 @@ use std::net::SocketAddr;
 #[derive(Clone, Debug, PartialEq)]
 #[repr(u32)]
 pub enum WgPeerF {
-    RemoveMe = 1,
-    ReplaceAllowedIps = 2,
+    RemoveMe = 1u32 << 0,
+    ReplaceAllowedIps = 1u32 << 1,
+    UpdateOnly = 1u32 << 2,
 }
 
 #[derive(Debug)]

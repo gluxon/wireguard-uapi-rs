@@ -225,3 +225,48 @@ fn large_peer() -> anyhow::Result<()> {
 
     Ok(())
 }
+
+#[cfg(target_os = "linux")]
+#[test]
+fn peer_update_only() -> anyhow::Result<()> {
+    let test_device = get::Device {
+        ifindex: 6,
+        ifname: get_random_ifname(),
+        private_key: Some(parse_device_key(&base64::decode(
+            "yAnz5TF+lXXJte14tji3zlMNq+hd2rYUIgJBgB3fBmk=",
+        )?)),
+        public_key: Some(parse_device_key(&base64::decode(
+            "HIgo9xNzJMWLKASShiTqIybxZ0U3wGLiUeJ1PKf8ykw=",
+        )?)),
+        listen_port: 51820,
+        fwmark: 0,
+        peers: vec![],
+    };
+
+    let response_device = {
+        let mut wg = WgSocket::connect()?;
+        let mut route = RouteSocket::connect()?;
+
+        route.add_device(&test_device.ifname)?;
+
+        let pubkey = parse_device_key(&base64::decode(
+            "xTIBA5rboUvnH4htodjb6e697QjLERt1NAB4mZqp8Dg=",
+        )?);
+        let set_device_args = set::Device::from_ifname(&test_device.ifname)
+            .private_key(test_device.private_key.as_ref().unwrap())
+            .listen_port(test_device.listen_port)
+            .peers(vec![
+                set::Peer::from_public_key(&pubkey).flags(vec![set::WgPeerF::UpdateOnly])
+            ]);
+
+        wg.set_device(set_device_args)?;
+        let response_device = wg.get_device(DeviceInterface::from_name(&test_device.ifname))?;
+        route.del_device(&test_device.ifname)?;
+
+        response_device
+    };
+
+    assert_eq!(response_device.peers, vec![]);
+
+    Ok(())
+}
