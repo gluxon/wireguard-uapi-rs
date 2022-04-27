@@ -117,6 +117,41 @@ impl Peer {
             allowed_ips: vec![],
         }
     }
+
+    pub fn remove(mut self, remove: bool) -> Self {
+        self.remove = remove.then(|| true);
+        self
+    }
+
+    pub fn update_only(mut self, update_only: bool) -> Self {
+        self.update_only = update_only.then(|| true);
+        self
+    }
+
+    pub fn preshared_key(mut self, preshared_key: [u8; 32]) -> Self {
+        self.preshared_key = Some(preshared_key);
+        self
+    }
+
+    pub fn endpoint(mut self, endpoint: SocketAddr) -> Self {
+        self.endpoint = Some(endpoint);
+        self
+    }
+
+    pub fn persistent_keepalive_interval(mut self, persistent_keepalive_interval: u16) -> Self {
+        self.persistent_keepalive_interval = Some(persistent_keepalive_interval);
+        self
+    }
+
+    pub fn replace_allowed_ips(mut self, replace_allowed_ips: bool) -> Self {
+        self.replace_allowed_ips = replace_allowed_ips.then(|| true);
+        self
+    }
+
+    pub fn allowed_ips(mut self, allowed_ips: Vec<AllowedIp>) -> Self {
+        self.allowed_ips = allowed_ips;
+        self
+    }
 }
 
 impl Display for Peer {
@@ -215,67 +250,57 @@ mod tests {
             fwmark: Some(0),
             replace_peers: Some(true),
             peers: vec![
-                {
-                    let mut peer = Peer::from_public_key([
-                        0xb8, 0x59, 0x96, 0xfe, 0xcc, 0x9c, 0x7f, 0x1f, 0xc6, 0xd2, 0x57, 0x2a,
-                        0x76, 0xed, 0xa1, 0x1d, 0x59, 0xbc, 0xd2, 0x0b, 0xe8, 0xe5, 0x43, 0xb1,
-                        0x5c, 0xe4, 0xbd, 0x85, 0xa8, 0xe7, 0x5a, 0x33,
-                    ]);
-                    peer.preshared_key = Some([
-                        0x18, 0x85, 0x15, 0x09, 0x3e, 0x95, 0x2f, 0x5f, 0x22, 0xe8, 0x65, 0xce,
-                        0xf3, 0x01, 0x2e, 0x72, 0xf8, 0xb5, 0xf0, 0xb5, 0x98, 0xac, 0x03, 0x09,
-                        0xd5, 0xda, 0xcc, 0xe3, 0xb7, 0x0f, 0xcf, 0x52,
-                    ]);
-                    peer.replace_allowed_ips = Some(true);
-                    peer.allowed_ips.push(AllowedIp {
-                        ipaddr: "192.168.4.4".parse().unwrap(),
-                        cidr_mask: 32,
-                    });
-                    peer.endpoint = Some("[abcd:23::33%2]:51820".parse().unwrap());
-                    peer
-                },
-                {
-                    let mut peer = Peer::from_public_key([
-                        0x58, 0x40, 0x2e, 0x69, 0x5b, 0xa1, 0x77, 0x2b, 0x1c, 0xc9, 0x30, 0x97,
-                        0x55, 0xf0, 0x43, 0x25, 0x1e, 0xa7, 0x7f, 0xdc, 0xf1, 0x0f, 0xbe, 0x63,
-                        0x98, 0x9c, 0xeb, 0x7e, 0x19, 0x32, 0x13, 0x76,
-                    ]);
-                    peer.replace_allowed_ips = Some(true);
-                    peer.allowed_ips.push(AllowedIp {
-                        ipaddr: "192.168.4.6".parse().unwrap(),
-                        cidr_mask: 32,
-                    });
-                    peer.persistent_keepalive_interval = Some(111);
-                    peer.endpoint = Some("182.122.22.19:3233".parse().unwrap());
-                    peer
-                },
-                {
-                    let mut peer = Peer::from_public_key([
-                        0x66, 0x2e, 0x14, 0xfd, 0x59, 0x45, 0x56, 0xf5, 0x22, 0x60, 0x47, 0x03,
-                        0x34, 0x03, 0x51, 0x25, 0x89, 0x03, 0xb6, 0x4f, 0x35, 0x55, 0x37, 0x63,
-                        0xf1, 0x94, 0x26, 0xab, 0x2a, 0x51, 0x5c, 0x58,
-                    ]);
-                    peer.endpoint = Some("5.152.198.39:51820".parse().unwrap());
-                    peer.replace_allowed_ips = Some(true);
-                    peer.allowed_ips.push(AllowedIp {
+                Peer::from_public_key([
+                    0xb8, 0x59, 0x96, 0xfe, 0xcc, 0x9c, 0x7f, 0x1f, 0xc6, 0xd2, 0x57, 0x2a, 0x76,
+                    0xed, 0xa1, 0x1d, 0x59, 0xbc, 0xd2, 0x0b, 0xe8, 0xe5, 0x43, 0xb1, 0x5c, 0xe4,
+                    0xbd, 0x85, 0xa8, 0xe7, 0x5a, 0x33,
+                ])
+                .preshared_key([
+                    0x18, 0x85, 0x15, 0x09, 0x3e, 0x95, 0x2f, 0x5f, 0x22, 0xe8, 0x65, 0xce, 0xf3,
+                    0x01, 0x2e, 0x72, 0xf8, 0xb5, 0xf0, 0xb5, 0x98, 0xac, 0x03, 0x09, 0xd5, 0xda,
+                    0xcc, 0xe3, 0xb7, 0x0f, 0xcf, 0x52,
+                ])
+                .replace_allowed_ips(true)
+                .allowed_ips(vec![AllowedIp {
+                    ipaddr: "192.168.4.4".parse().unwrap(),
+                    cidr_mask: 32,
+                }])
+                .endpoint("[abcd:23::33%2]:51820".parse().unwrap()),
+                Peer::from_public_key([
+                    0x58, 0x40, 0x2e, 0x69, 0x5b, 0xa1, 0x77, 0x2b, 0x1c, 0xc9, 0x30, 0x97, 0x55,
+                    0xf0, 0x43, 0x25, 0x1e, 0xa7, 0x7f, 0xdc, 0xf1, 0x0f, 0xbe, 0x63, 0x98, 0x9c,
+                    0xeb, 0x7e, 0x19, 0x32, 0x13, 0x76,
+                ])
+                .replace_allowed_ips(true)
+                .allowed_ips(vec![AllowedIp {
+                    ipaddr: "192.168.4.6".parse().unwrap(),
+                    cidr_mask: 32,
+                }])
+                .persistent_keepalive_interval(111)
+                .endpoint("182.122.22.19:3233".parse().unwrap()),
+                Peer::from_public_key([
+                    0x66, 0x2e, 0x14, 0xfd, 0x59, 0x45, 0x56, 0xf5, 0x22, 0x60, 0x47, 0x03, 0x34,
+                    0x03, 0x51, 0x25, 0x89, 0x03, 0xb6, 0x4f, 0x35, 0x55, 0x37, 0x63, 0xf1, 0x94,
+                    0x26, 0xab, 0x2a, 0x51, 0x5c, 0x58,
+                ])
+                .endpoint("5.152.198.39:51820".parse().unwrap())
+                .replace_allowed_ips(true)
+                .allowed_ips(vec![
+                    AllowedIp {
                         ipaddr: "192.168.4.10".parse().unwrap(),
                         cidr_mask: 32,
-                    });
-                    peer.allowed_ips.push(AllowedIp {
+                    },
+                    AllowedIp {
                         ipaddr: "192.168.4.11".parse().unwrap(),
                         cidr_mask: 32,
-                    });
-                    peer
-                },
-                {
-                    let mut peer = Peer::from_public_key([
-                        0xe8, 0x18, 0xb5, 0x8d, 0xb5, 0x27, 0x40, 0x87, 0xfc, 0xc1, 0xbe, 0x5d,
-                        0xc7, 0x28, 0xcf, 0x53, 0xd3, 0xb5, 0x72, 0x6b, 0x4c, 0xef, 0x6b, 0x9b,
-                        0xab, 0x8f, 0x8f, 0x8c, 0x24, 0x52, 0xc2, 0x5c,
-                    ]);
-                    peer.remove = Some(true);
-                    peer
-                },
+                    },
+                ]),
+                Peer::from_public_key([
+                    0xe8, 0x18, 0xb5, 0x8d, 0xb5, 0x27, 0x40, 0x87, 0xfc, 0xc1, 0xbe, 0x5d, 0xc7,
+                    0x28, 0xcf, 0x53, 0xd3, 0xb5, 0x72, 0x6b, 0x4c, 0xef, 0x6b, 0x9b, 0xab, 0x8f,
+                    0x8f, 0x8c, 0x24, 0x52, 0xc2, 0x5c,
+                ])
+                .remove(true),
             ],
         };
         let actual = format!("{}", set_request);
@@ -302,21 +327,18 @@ mod tests {
                 0x53, 0xdb, 0xac, 0xa9, 0x14, 0x6c, 0xf1, 0x50, 0xc5, 0xf8, 0x57, 0x56, 0x80, 0xfe,
                 0xba, 0x52, 0x02, 0x7a,
             ]),
-            peers: vec![{
-                let mut peer = Peer::from_public_key([
-                    0xb8, 0x59, 0x96, 0xfe, 0xcc, 0x9c, 0x7f, 0x1f, 0xc6, 0xd2, 0x57, 0x2a, 0x76,
-                    0xed, 0xa1, 0x1d, 0x59, 0xbc, 0xd2, 0x0b, 0xe8, 0xe5, 0x43, 0xb1, 0x5c, 0xe4,
-                    0xbd, 0x85, 0xa8, 0xe7, 0x5a, 0x33,
-                ]);
-                peer.update_only = Some(true);
-                peer.replace_allowed_ips = Some(true);
-                peer.allowed_ips.push(AllowedIp {
-                    ipaddr: "192.168.4.4".parse().unwrap(),
-                    cidr_mask: 32,
-                });
-                peer.endpoint = Some("[abcd:23::33%2]:51820".parse().unwrap());
-                peer
-            }],
+            peers: vec![Peer::from_public_key([
+                0xb8, 0x59, 0x96, 0xfe, 0xcc, 0x9c, 0x7f, 0x1f, 0xc6, 0xd2, 0x57, 0x2a, 0x76, 0xed,
+                0xa1, 0x1d, 0x59, 0xbc, 0xd2, 0x0b, 0xe8, 0xe5, 0x43, 0xb1, 0x5c, 0xe4, 0xbd, 0x85,
+                0xa8, 0xe7, 0x5a, 0x33,
+            ])
+            .update_only(true)
+            .replace_allowed_ips(true)
+            .allowed_ips(vec![AllowedIp {
+                ipaddr: "192.168.4.4".parse().unwrap(),
+                cidr_mask: 32,
+            }])
+            .endpoint("[abcd:23::33%2]:51820".parse().unwrap())],
             ..Default::default()
         };
         let actual = format!("{}", set_request);
