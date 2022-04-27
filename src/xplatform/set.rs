@@ -59,7 +59,7 @@ impl Display for Device {
 
 /// Documentation of each field comes from:
 /// https://www.wireguard.com/xplatform/#configuration-protocol
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct Peer {
     /// The value for this key should be a lowercase hex-encoded public key of a
     /// new peer entry, which this command adds. The same public key value may
