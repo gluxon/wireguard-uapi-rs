@@ -24,4 +24,5 @@ mod parser;
 mod protocol;
 pub mod set;
 
+#[cfg(unix)]
 pub use client::Client;
