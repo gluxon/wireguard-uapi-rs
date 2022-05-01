@@ -1,5 +1,6 @@
 use super::ParseAttributeError;
 use neli::err::{DeError, NlError, SerError};
+use std::io;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -15,6 +16,9 @@ pub enum ListDevicesError {
 
     #[error(transparent)]
     ParseAttributeError(ParseAttributeError),
+
+    #[error(transparent)]
+    IoError(io::Error),
 
     // TODO: Print netlink error message when neli exposes it.
     #[error("Unknown netlink error while reading devices.")]
@@ -42,5 +46,11 @@ impl From<SerError> for ListDevicesError {
 impl From<ParseAttributeError> for ListDevicesError {
     fn from(error: ParseAttributeError) -> Self {
         Self::ParseAttributeError(error)
+    }
+}
+
+impl From<io::Error> for ListDevicesError {
+    fn from(error: io::Error) -> Self {
+        Self::IoError(error)
     }
 }

@@ -1,5 +1,6 @@
 use super::ParseDeviceError;
 use neli::err::{NlError, SerError};
+use std::io;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -20,6 +21,9 @@ pub enum GetDeviceError {
 
     #[error(transparent)]
     ParseDeviceError(ParseDeviceError),
+
+    #[error(transparent)]
+    IoError(io::Error),
 }
 
 impl From<NlError> for GetDeviceError {
@@ -37,5 +41,11 @@ impl From<SerError> for GetDeviceError {
 impl From<ParseDeviceError> for GetDeviceError {
     fn from(error: ParseDeviceError) -> Self {
         GetDeviceError::ParseDeviceError(error)
+    }
+}
+
+impl From<io::Error> for GetDeviceError {
+    fn from(error: io::Error) -> Self {
+        Self::IoError(error)
     }
 }

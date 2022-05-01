@@ -1,5 +1,5 @@
-use neli::consts::NlAttrType;
-use neli::{impl_var, impl_var_base, impl_var_trait};
+use neli::consts::genl::NlAttrType;
+use neli::impl_var;
 use std::fmt;
 
 // As of neli 0.4.3, the NLA_F_NESTED flag needs to be added to newly created
@@ -29,19 +29,21 @@ macro_rules! impl_bit_ops_for_nla {
     };
 }
 
-impl_var_trait!(
-    NlaNested, u16, NlAttrType,
+impl_var!(
+    pub NlaNested, u16,
     Unspec => 0,
     // neli requires 1 non-zero argument even though WireGuard
     // does not use it.
     Unused => 1
 );
 
+impl NlAttrType for NlaNested {}
+
 impl_bit_ops_for_nla!(NlaNested);
 
 // https://github.com/WireGuard/WireGuard/blob/62b335b56cc99312ccedfa571500fbef3756a623/src/uapi/wireguard.h#L147
-impl_var_trait!(
-    WgDeviceAttribute, u16, NlAttrType,
+impl_var!(
+    pub WgDeviceAttribute, u16,
     Unspec => 0,
     Ifindex => 1,
     Ifname => 2,
@@ -53,6 +55,8 @@ impl_var_trait!(
     Peers => 8
 );
 
+impl NlAttrType for WgDeviceAttribute {}
+
 impl fmt::Display for WgDeviceAttribute {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self)
@@ -62,8 +66,8 @@ impl fmt::Display for WgDeviceAttribute {
 impl_bit_ops_for_nla!(WgDeviceAttribute);
 
 // https://github.com/WireGuard/WireGuard/blob/62b335b56cc99312ccedfa571500fbef3756a623/src/uapi/wireguard.h#L165
-impl_var_trait!(
-    WgPeerAttribute, u16, NlAttrType,
+impl_var!(
+    pub WgPeerAttribute, u16,
     Unspec => 0,
     PublicKey => 1,
     PresharedKey => 2,
@@ -77,6 +81,8 @@ impl_var_trait!(
     ProtocolVersion => 10
 );
 
+impl NlAttrType for WgPeerAttribute {}
+
 impl fmt::Display for WgPeerAttribute {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self)
@@ -86,10 +92,11 @@ impl fmt::Display for WgPeerAttribute {
 impl_bit_ops_for_nla!(WgPeerAttribute);
 
 // https://github.com/WireGuard/WireGuard/blob/62b335b56cc99312ccedfa571500fbef3756a623/src/uapi/wireguard.h#L181
-impl_var_trait!(
-    WgAllowedIpAttribute, u16, NlAttrType,
+impl_var!(
+    pub WgAllowedIpAttribute, u16,
     Unspec => 0,
     Family => 1,
     IpAddr => 2,
     CidrMask => 3
 );
+impl NlAttrType for WgAllowedIpAttribute {}
