@@ -78,7 +78,7 @@ impl From<ParseKeyError> for ParseGetResponseError {
     }
 }
 
-pub(crate) fn parse(
+pub fn parse(
     lines: impl Iterator<Item = Result<String, std::io::Error>>,
 ) -> Result<get::Device, ParseGetResponseError> {
     let initial_state = {
