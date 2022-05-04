@@ -20,7 +20,7 @@
 
 mod client;
 pub mod error;
-mod parser;
+pub mod parser;
 mod protocol;
 pub mod set;
 
