@@ -78,14 +78,18 @@ pub fn extend_device(
     for next_peer in next_peers {
         let matching_last_peer = device
             .peers
-            .last_mut()
-            .filter(|last_peer| Some(last_peer.public_key) == next_peer.public_key);
+            .iter_mut()
+            .next_back()
+            .filter(|(public_key, _)| Some(**public_key) == next_peer.public_key);
 
         match matching_last_peer {
-            Some(matching_last_peer) => matching_last_peer
+            Some((_, matching_last_peer)) => matching_last_peer
                 .allowed_ips
                 .append(&mut next_peer.allowed_ips.unwrap_or_default()),
-            None => device.peers.push(next_peer.build()?),
+            None => {
+                let next_peer = next_peer.build()?;
+                device.peers.insert(next_peer.public_key, next_peer);
+            }
         }
     }
 
@@ -345,68 +349,73 @@ mod tests {
     // the third peer removed since it specifies an domain endpoint only valid
     // in the context of wg-quick.
     fn get_device_from_man() -> anyhow::Result<Device> {
-        Ok(Device {
-            ifindex: 6,
-            ifname: "test".to_string(),
-            private_key: Some(parse_device_key(&base64::decode(
+        let peers = vec![
+            PeerBuilder::default()
+                .public_key(parse_device_key(&base64::decode(
+                    "xTIBA5rboUvnH4htodjb6e697QjLERt1NAB4mZqp8Dg",
+                )?)?)
+                .preshared_key([0u8; 32])
+                .endpoint(Some("192.95.5.67:1234".parse()?))
+                .persistent_keepalive_interval(0)
+                .last_handshake_time(Duration::new(0, 0))
+                .rx_bytes(0)
+                .tx_bytes(0)
+                .allowed_ips(vec![
+                    AllowedIp {
+                        family: libc::AF_INET as u16,
+                        ipaddr: "10.192.122.3".parse()?,
+                        cidr_mask: 32,
+                    },
+                    AllowedIp {
+                        family: libc::AF_INET as u16,
+                        ipaddr: "10.192.124.0".parse()?,
+                        cidr_mask: 24,
+                    },
+                ])
+                .protocol_version(1)
+                .build()
+                .unwrap(),
+            PeerBuilder::default()
+                .public_key(parse_device_key(&base64::decode(
+                    "TrMvSoP4jYQlY6RIzBgbssQqY3vxI2Pi+y71lOWWXX0=",
+                )?)?)
+                .preshared_key([0u8; 32])
+                .endpoint(Some("[2607:5300:60:6b0::c05f:543]:2468".parse()?))
+                .persistent_keepalive_interval(0)
+                .last_handshake_time(Duration::new(0, 0))
+                .rx_bytes(0)
+                .tx_bytes(0)
+                .allowed_ips(vec![
+                    AllowedIp {
+                        family: libc::AF_INET as u16,
+                        ipaddr: "10.192.122.4".parse()?,
+                        cidr_mask: 32,
+                    },
+                    AllowedIp {
+                        family: libc::AF_INET as u16,
+                        ipaddr: "192.168.0.0".parse()?,
+                        cidr_mask: 16,
+                    },
+                ])
+                .protocol_version(1)
+                .build()
+                .unwrap(),
+        ];
+
+        Ok(DeviceBuilder::default()
+            .ifindex(6)
+            .ifname("test".to_string())
+            .private_key(Some(parse_device_key(&base64::decode(
                 "yAnz5TF+lXXJte14tji3zlMNq+hd2rYUIgJBgB3fBmk=",
-            )?)?),
-            public_key: Some(parse_device_key(&base64::decode(
+            )?)?))
+            .public_key(Some(parse_device_key(&base64::decode(
                 "HIgo9xNzJMWLKASShiTqIybxZ0U3wGLiUeJ1PKf8ykw=",
-            )?)?),
-            listen_port: 51820,
-            fwmark: 0,
-            peers: vec![
-                Peer {
-                    public_key: parse_device_key(&base64::decode(
-                        "xTIBA5rboUvnH4htodjb6e697QjLERt1NAB4mZqp8Dg",
-                    )?)?,
-                    preshared_key: [0u8; 32],
-                    endpoint: Some("192.95.5.67:1234".parse()?),
-                    persistent_keepalive_interval: 0,
-                    last_handshake_time: Duration::new(0, 0),
-                    rx_bytes: 0,
-                    tx_bytes: 0,
-                    allowed_ips: vec![
-                        AllowedIp {
-                            family: libc::AF_INET as u16,
-                            ipaddr: "10.192.122.3".parse()?,
-                            cidr_mask: 32,
-                        },
-                        AllowedIp {
-                            family: libc::AF_INET as u16,
-                            ipaddr: "10.192.124.0".parse()?,
-                            cidr_mask: 24,
-                        },
-                    ],
-                    protocol_version: 1,
-                },
-                Peer {
-                    public_key: parse_device_key(&base64::decode(
-                        "TrMvSoP4jYQlY6RIzBgbssQqY3vxI2Pi+y71lOWWXX0=",
-                    )?)?,
-                    preshared_key: [0u8; 32],
-                    endpoint: Some("[2607:5300:60:6b0::c05f:543]:2468".parse()?),
-                    persistent_keepalive_interval: 0,
-                    last_handshake_time: Duration::new(0, 0),
-                    rx_bytes: 0,
-                    tx_bytes: 0,
-                    allowed_ips: vec![
-                        AllowedIp {
-                            family: libc::AF_INET as u16,
-                            ipaddr: "10.192.122.4".parse()?,
-                            cidr_mask: 32,
-                        },
-                        AllowedIp {
-                            family: libc::AF_INET as u16,
-                            ipaddr: "192.168.0.0".parse()?,
-                            cidr_mask: 16,
-                        },
-                    ],
-                    protocol_version: 1,
-                },
-            ],
-        })
+            )?)?))
+            .listen_port(51820)
+            .fwmark(0)
+            .peers(peers)
+            .build()
+            .unwrap())
     }
 
     fn create_test_genlmsghdr(
@@ -758,40 +767,43 @@ mod tests {
         let genlmsghdr = create_test_genlmsghdr(&second_payload)?;
         let device = extend_device(device, genlmsghdr.get_attr_handle())?;
 
+        let peers = vec![Peer {
+            public_key: parse_device_key(&base64::decode(
+                "xTIBA5rboUvnH4htodjb6e697QjLERt1NAB4mZqp8Dg=",
+            )?)?,
+            preshared_key: [0u8; 32],
+            endpoint: Some("192.95.5.67:1234".parse()?),
+            persistent_keepalive_interval: 0,
+            last_handshake_time: Duration::new(0, 0),
+            rx_bytes: 0,
+            tx_bytes: 0,
+            allowed_ips: (1..=150)
+                .step_by(1)
+                .map(|h| AllowedIp {
+                    family: libc::AF_INET6 as u16,
+                    ipaddr: IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, h)),
+                    cidr_mask: 128,
+                })
+                .collect(),
+            protocol_version: 1,
+        }];
+
         assert_eq!(
             device,
-            Device {
-                ifindex: 6,
-                ifname: "test".to_string(),
-                private_key: Some(parse_device_key(&base64::decode(
+            DeviceBuilder::default()
+                .ifindex(6)
+                .ifname("test".to_string())
+                .private_key(Some(parse_device_key(&base64::decode(
                     "yAnz5TF+lXXJte14tji3zlMNq+hd2rYUIgJBgB3fBmk="
-                )?)?),
-                public_key: Some(parse_device_key(&base64::decode(
+                )?)?))
+                .public_key(Some(parse_device_key(&base64::decode(
                     "HIgo9xNzJMWLKASShiTqIybxZ0U3wGLiUeJ1PKf8ykw="
-                )?)?),
-                listen_port: 51820,
-                fwmark: 0,
-                peers: vec![Peer {
-                    public_key: parse_device_key(&base64::decode(
-                        "xTIBA5rboUvnH4htodjb6e697QjLERt1NAB4mZqp8Dg="
-                    )?)?,
-                    preshared_key: [0u8; 32],
-                    endpoint: Some("192.95.5.67:1234".parse()?),
-                    persistent_keepalive_interval: 0,
-                    last_handshake_time: Duration::new(0, 0),
-                    rx_bytes: 0,
-                    tx_bytes: 0,
-                    allowed_ips: (1..=150)
-                        .step_by(1)
-                        .map(|h| AllowedIp {
-                            family: libc::AF_INET6 as u16,
-                            ipaddr: IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, h)),
-                            cidr_mask: 128,
-                        })
-                        .collect(),
-                    protocol_version: 1,
-                }]
-            }
+                )?)?))
+                .listen_port(51820)
+                .fwmark(0)
+                .peers(peers)
+                .build()
+                .unwrap()
         );
 
         Ok(())
