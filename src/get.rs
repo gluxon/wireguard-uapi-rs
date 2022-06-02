@@ -1,3 +1,4 @@
+use crate::crypto::{PresharedKey, PrivateKey, PublicKey};
 use derive_builder::Builder;
 use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
@@ -8,9 +9,9 @@ pub struct Device {
     pub ifindex: u32,
     pub ifname: String,
     #[builder(default)]
-    pub private_key: Option<[u8; 32]>,
+    pub private_key: Option<PrivateKey>,
     #[builder(default)]
-    pub public_key: Option<[u8; 32]>,
+    pub public_key: Option<PublicKey>,
     pub listen_port: u16,
     pub fwmark: u32,
     #[builder(default)]
@@ -22,8 +23,8 @@ pub struct Peer {
     // The public_key and allowed_ips fields are public to
     // make peer coalescing easier.
     #[builder(field(public))]
-    pub public_key: [u8; 32],
-    pub preshared_key: [u8; 32],
+    pub public_key: PublicKey,
+    pub preshared_key: PresharedKey,
     #[builder(default)]
     pub endpoint: Option<SocketAddr>,
     pub persistent_keepalive_interval: u16,

@@ -1,10 +1,14 @@
 use super::{AllowedIp, Device, Peer};
-use crate::linux::attr::NLA_F_NESTED;
-use crate::linux::attr::{NlaNested, WgDeviceAttribute, WgPeerAttribute};
-use crate::linux::cmd::WgCmd;
-use crate::linux::consts::WG_GENL_VERSION;
-use crate::linux::socket::NlWgMsgType;
-use crate::linux::DeviceInterface;
+use crate::{
+    crypto::PublicKey,
+    linux::{
+        attr::{NlaNested, WgDeviceAttribute, WgPeerAttribute, NLA_F_NESTED},
+        cmd::WgCmd,
+        consts::WG_GENL_VERSION,
+        socket::NlWgMsgType,
+        DeviceInterface,
+    },
+};
 use neli::consts::NlmF;
 use neli::err::SerError;
 use neli::genl::Genlmsghdr;
@@ -53,7 +57,7 @@ impl IncubatingDeviceFragment {
                     attrs.push(Nlattr::new(
                         None,
                         WgDeviceAttribute::PrivateKey,
-                        &private_key[..],
+                        private_key.as_ref(),
                     )?);
                 }
 
@@ -132,7 +136,11 @@ impl IncubatingPeerFragment {
         let mut partial_peer =
             Nlattr::new::<Vec<u8>>(None, NlaNested::Unspec | NLA_F_NESTED, vec![])?;
 
-        let public_key = Nlattr::new(None, WgPeerAttribute::PublicKey, peer.public_key.to_vec())?;
+        let public_key = Nlattr::new(
+            None,
+            WgPeerAttribute::PublicKey,
+            peer.public_key.as_ref().to_vec(),
+        )?;
         partial_peer.add_nested_attribute(&public_key)?;
 
         if !peer.flags.is_empty() {
@@ -150,7 +158,7 @@ impl IncubatingPeerFragment {
             partial_peer.add_nested_attribute(&Nlattr::new(
                 None,
                 WgPeerAttribute::PresharedKey,
-                &preshared_key[..],
+                preshared_key.as_ref(),
             )?)?;
         }
 
@@ -217,13 +225,17 @@ impl IncubatingPeerFragment {
         Ok((incubating_peer_fragment, peer.allowed_ips))
     }
 
-    fn from_public_key(public_key: &[u8; 32]) -> Result<Self, SerError> {
+    fn from_public_key(public_key: &PublicKey) -> Result<Self, SerError> {
         let mut partial_peer =
             Nlattr::new::<Vec<u8>>(None, NlaNested::Unspec | NLA_F_NESTED, vec![])?;
         let allowed_ips =
             Nlattr::new::<Vec<u8>>(None, WgPeerAttribute::AllowedIps | NLA_F_NESTED, vec![])?;
 
-        let public_key = Nlattr::new(None, WgPeerAttribute::PublicKey, public_key.to_vec())?;
+        let public_key = Nlattr::new(
+            None,
+            WgPeerAttribute::PublicKey,
+            public_key.as_ref().to_vec(),
+        )?;
         partial_peer.add_nested_attribute(&public_key)?;
 
         Ok(IncubatingPeerFragment {

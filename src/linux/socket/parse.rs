@@ -1,7 +1,10 @@
-use crate::err::{ParseAttributeError, ParseDeviceError, ParseIpAddrError, ParseSockAddrError};
-use crate::get::{AllowedIp, AllowedIpBuilder, Device, DeviceBuilder, Peer, PeerBuilder};
-use crate::linux::attr::{
-    NlaNested, WgAllowedIpAttribute, WgDeviceAttribute, WgPeerAttribute, NLA_TYPE_MASK,
+use crate::{
+    crypto::Key,
+    err::{ParseAttributeError, ParseDeviceError, ParseIpAddrError, ParseSockAddrError},
+    get::{AllowedIp, AllowedIpBuilder, Device, DeviceBuilder, Peer, PeerBuilder},
+    linux::attr::{
+        NlaNested, WgAllowedIpAttribute, WgDeviceAttribute, WgPeerAttribute, NLA_TYPE_MASK,
+    },
 };
 use libc::{in6_addr, in_addr, AF_INET, AF_INET6};
 use neli::nlattr::AttrHandle;
@@ -26,10 +29,10 @@ pub fn parse_device(handle: AttrHandle<WgDeviceAttribute>) -> Result<Device, Par
                 device_builder.ifname(parse_nla_nul_string(&attr.payload)?);
             }
             WgDeviceAttribute::PrivateKey => {
-                device_builder.private_key(Some(parse_device_key(&attr.payload)?));
+                device_builder.private_key(Some(Key::try_from(&attr.payload[..])?));
             }
             WgDeviceAttribute::PublicKey => {
-                device_builder.public_key(Some(parse_device_key(&attr.payload)?));
+                device_builder.public_key(Some(Key::try_from(&attr.payload[..])?));
             }
             WgDeviceAttribute::ListenPort => {
                 device_builder.listen_port(parse_nla_u16(&attr.payload)?);
@@ -113,10 +116,10 @@ pub fn parse_peer_builder(
             WgPeerAttribute::Unspec => {}
             WgPeerAttribute::Flags => {}
             WgPeerAttribute::PublicKey => {
-                peer_builder.public_key(parse_device_key(&attr.payload)?);
+                peer_builder.public_key(Key::try_from(&attr.payload[..])?);
             }
             WgPeerAttribute::PresharedKey => {
-                peer_builder.preshared_key(parse_device_key(&attr.payload)?);
+                peer_builder.preshared_key(Key::try_from(&attr.payload[..])?);
             }
             WgPeerAttribute::Endpoint => {
                 peer_builder.endpoint(Some(parse_sockaddr_in(&attr.payload)?));
@@ -251,19 +254,6 @@ pub fn parse_nla_nul_string(payload: &[u8]) -> Result<String, ParseAttributeErro
     Ok(String::from_utf8(payload)?)
 }
 
-pub fn parse_device_key(buf: &[u8]) -> Result<[u8; 32], ParseAttributeError> {
-    Some(buf.len()).filter(|&len| len == 32).ok_or({
-        ParseAttributeError::StaticLengthError {
-            expected: 32,
-            found: buf.len(),
-        }
-    })?;
-
-    let mut key = [0u8; 32];
-    key.copy_from_slice(buf);
-    Ok(key)
-}
-
 pub fn parse_sockaddr_in(buf: &[u8]) -> Result<SocketAddr, ParseAttributeError> {
     let family = parse_nla_u16(&buf[0..2])?;
 
@@ -348,20 +338,20 @@ mod tests {
         Ok(Device {
             ifindex: 6,
             ifname: "test".to_string(),
-            private_key: Some(parse_device_key(&base64::decode(
+            private_key: Some(Key::try_from(&*base64::decode(
                 "yAnz5TF+lXXJte14tji3zlMNq+hd2rYUIgJBgB3fBmk=",
             )?)?),
-            public_key: Some(parse_device_key(&base64::decode(
+            public_key: Some(Key::try_from(&*base64::decode(
                 "HIgo9xNzJMWLKASShiTqIybxZ0U3wGLiUeJ1PKf8ykw=",
             )?)?),
             listen_port: 51820,
             fwmark: 0,
             peers: vec![
                 Peer {
-                    public_key: parse_device_key(&base64::decode(
+                    public_key: Key::try_from(&*base64::decode(
                         "xTIBA5rboUvnH4htodjb6e697QjLERt1NAB4mZqp8Dg",
                     )?)?,
-                    preshared_key: [0u8; 32],
+                    preshared_key: Key::zero(),
                     endpoint: Some("192.95.5.67:1234".parse()?),
                     persistent_keepalive_interval: 0,
                     last_handshake_time: Duration::new(0, 0),
@@ -382,10 +372,10 @@ mod tests {
                     protocol_version: 1,
                 },
                 Peer {
-                    public_key: parse_device_key(&base64::decode(
+                    public_key: Key::try_from(&*base64::decode(
                         "TrMvSoP4jYQlY6RIzBgbssQqY3vxI2Pi+y71lOWWXX0=",
                     )?)?,
-                    preshared_key: [0u8; 32],
+                    preshared_key: Key::zero(),
                     endpoint: Some("[2607:5300:60:6b0::c05f:543]:2468".parse()?),
                     persistent_keepalive_interval: 0,
                     last_handshake_time: Duration::new(0, 0),
@@ -763,19 +753,19 @@ mod tests {
             Device {
                 ifindex: 6,
                 ifname: "test".to_string(),
-                private_key: Some(parse_device_key(&base64::decode(
+                private_key: Some(Key::try_from(&*base64::decode(
                     "yAnz5TF+lXXJte14tji3zlMNq+hd2rYUIgJBgB3fBmk="
                 )?)?),
-                public_key: Some(parse_device_key(&base64::decode(
+                public_key: Some(Key::try_from(&*base64::decode(
                     "HIgo9xNzJMWLKASShiTqIybxZ0U3wGLiUeJ1PKf8ykw="
                 )?)?),
                 listen_port: 51820,
                 fwmark: 0,
                 peers: vec![Peer {
-                    public_key: parse_device_key(&base64::decode(
+                    public_key: Key::try_from(&*base64::decode(
                         "xTIBA5rboUvnH4htodjb6e697QjLERt1NAB4mZqp8Dg="
                     )?)?,
-                    preshared_key: [0u8; 32],
+                    preshared_key: Key::zero(),
                     endpoint: Some("192.95.5.67:1234".parse()?),
                     persistent_keepalive_interval: 0,
                     last_handshake_time: Duration::new(0, 0),
