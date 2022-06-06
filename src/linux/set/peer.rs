@@ -1,4 +1,7 @@
-use crate::set::AllowedIp;
+use crate::{
+    crypto::{PresharedKey, PublicKey},
+    set::AllowedIp,
+};
 use std::net::SocketAddr;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -11,10 +14,10 @@ pub enum WgPeerF {
 
 #[derive(Debug)]
 pub struct Peer<'a> {
-    pub public_key: &'a [u8; 32],
+    pub public_key: &'a PublicKey,
     pub flags: Vec<WgPeerF>,
     /// all zeros to remove
-    pub preshared_key: Option<&'a [u8; 32]>,
+    pub preshared_key: Option<&'a PresharedKey>,
     pub endpoint: Option<&'a SocketAddr>,
     /// 0 to disable
     pub persistent_keepalive_interval: Option<u16>,
@@ -25,7 +28,7 @@ pub struct Peer<'a> {
 }
 
 impl<'a> Peer<'a> {
-    pub fn from_public_key(public_key: &'a [u8; 32]) -> Self {
+    pub fn from_public_key(public_key: &'a PublicKey) -> Self {
         Self {
             public_key,
             flags: vec![],
@@ -42,7 +45,7 @@ impl<'a> Peer<'a> {
         self
     }
 
-    pub fn preshared_key(mut self, preshared_key: &'a [u8; 32]) -> Self {
+    pub fn preshared_key(mut self, preshared_key: &'a PresharedKey) -> Self {
         self.preshared_key = Some(preshared_key);
         self
     }

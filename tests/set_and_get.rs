@@ -1,20 +1,16 @@
 #[cfg(target_os = "linux")]
 use {
-    std::net::{IpAddr, Ipv6Addr},
-    std::time::Duration,
-    wireguard_uapi::{get, set, DeviceInterface, RouteSocket, WgSocket},
+    std::{
+        convert::TryFrom,
+        net::{IpAddr, Ipv6Addr},
+        time::Duration,
+    },
+    wireguard_uapi::{crypto::Key, get, set, DeviceInterface, RouteSocket, WgSocket},
 };
 
 #[cfg(target_os = "linux")]
 fn get_random_ifname() -> String {
     format!("wgtest{}", rand::random::<u16>())
-}
-
-#[cfg(target_os = "linux")]
-fn parse_device_key(buf: &[u8]) -> [u8; 32] {
-    let mut key = [0u8; 32];
-    key.copy_from_slice(buf);
-    key
 }
 
 #[cfg(target_os = "linux")]
@@ -34,20 +30,20 @@ fn simple() -> anyhow::Result<()> {
     let mut test_device = get::Device {
         ifindex: 0,
         ifname: get_random_ifname(),
-        private_key: Some(parse_device_key(&base64::decode(
+        private_key: Some(Key::try_from(&*base64::decode(
             "EHhtoXVXpnXz31cx8nrAxQfvaRqe1vf343GVSyEtqUU=",
-        )?)),
-        public_key: Some(parse_device_key(&base64::decode(
+        )?)?),
+        public_key: Some(Key::try_from(&*base64::decode(
             "MhBzmIBrzw8b8iF2FH4ejh/7Vumn6Q/KoR0H5+o7mlY=",
-        )?)),
+        )?)?),
         listen_port: 1234,
         fwmark: 0,
         peers: vec![
             get::Peer {
-                public_key: parse_device_key(&base64::decode(
+                public_key: Key::try_from(&*base64::decode(
                     "DNeiCuVE2CuDy9QH3K3/egRK1rdn/oThlPtWNc4FfSw=",
-                )?),
-                preshared_key: [0u8; 32],
+                )?)?,
+                preshared_key: Key::zero(),
                 endpoint: Some("[::1]:8080".parse()?),
                 persistent_keepalive_interval: 0,
                 last_handshake_time: Duration::new(0, 0),
@@ -68,12 +64,14 @@ fn simple() -> anyhow::Result<()> {
                 protocol_version: 1,
             },
             get::Peer {
-                public_key: parse_device_key(&base64::decode(
+                public_key: Key::try_from(&*base64::decode(
                     "6KUaqULa+M6JI+b6DP3p0ZZZWyClN7ioMpYJp0kNFxQ=",
-                )?),
-                preshared_key: parse_device_key(&base64::decode(
+                )?)
+                .unwrap(),
+                preshared_key: Key::try_from(&*base64::decode(
                     "cMeE5GWUzUbvxbnBKco2MwAnW78nsk8vr04+KupVFkQ=",
-                )?),
+                )?)
+                .unwrap(),
                 endpoint: Some("127.0.0.1:12345".parse()?),
                 persistent_keepalive_interval: 60,
                 last_handshake_time: Duration::new(0, 0),
@@ -160,19 +158,19 @@ fn large_peer() -> anyhow::Result<()> {
     let mut test_device = get::Device {
         ifindex: 6,
         ifname: get_random_ifname(),
-        private_key: Some(parse_device_key(&base64::decode(
+        private_key: Some(Key::try_from(&*base64::decode(
             "yAnz5TF+lXXJte14tji3zlMNq+hd2rYUIgJBgB3fBmk=",
-        )?)),
-        public_key: Some(parse_device_key(&base64::decode(
+        )?)?),
+        public_key: Some(Key::try_from(&*base64::decode(
             "HIgo9xNzJMWLKASShiTqIybxZ0U3wGLiUeJ1PKf8ykw=",
-        )?)),
+        )?)?),
         listen_port: 51820,
         fwmark: 0,
         peers: vec![get::Peer {
-            public_key: parse_device_key(&base64::decode(
+            public_key: Key::try_from(&*base64::decode(
                 "xTIBA5rboUvnH4htodjb6e697QjLERt1NAB4mZqp8Dg=",
-            )?),
-            preshared_key: [0u8; 32],
+            )?)?,
+            preshared_key: Key::zero(),
             endpoint: Some("192.95.5.67:1234".parse()?),
             persistent_keepalive_interval: 0,
             last_handshake_time: Duration::new(0, 0),
@@ -232,12 +230,12 @@ fn peer_update_only() -> anyhow::Result<()> {
     let test_device = get::Device {
         ifindex: 6,
         ifname: get_random_ifname(),
-        private_key: Some(parse_device_key(&base64::decode(
+        private_key: Some(Key::try_from(&*base64::decode(
             "yAnz5TF+lXXJte14tji3zlMNq+hd2rYUIgJBgB3fBmk=",
-        )?)),
-        public_key: Some(parse_device_key(&base64::decode(
+        )?)?),
+        public_key: Some(Key::try_from(&*base64::decode(
             "HIgo9xNzJMWLKASShiTqIybxZ0U3wGLiUeJ1PKf8ykw=",
-        )?)),
+        )?)?),
         listen_port: 51820,
         fwmark: 0,
         peers: vec![],
@@ -249,9 +247,9 @@ fn peer_update_only() -> anyhow::Result<()> {
 
         route.add_device(&test_device.ifname)?;
 
-        let pubkey = parse_device_key(&base64::decode(
+        let pubkey = Key::try_from(&*base64::decode(
             "xTIBA5rboUvnH4htodjb6e697QjLERt1NAB4mZqp8Dg=",
-        )?);
+        )?)?;
         let set_device_args = set::Device::from_ifname(&test_device.ifname)
             .private_key(test_device.private_key.as_ref().unwrap())
             .listen_port(test_device.listen_port)

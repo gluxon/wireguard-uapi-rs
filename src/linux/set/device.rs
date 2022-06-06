@@ -1,5 +1,4 @@
-use crate::set::Peer;
-use crate::DeviceInterface;
+use crate::{crypto::PrivateKey, set::Peer, DeviceInterface};
 use std::borrow::Cow;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -15,7 +14,7 @@ pub struct Device<'a> {
     // list below.
     pub flags: Vec<WgDeviceF>,
     /// all zeros to remove
-    pub private_key: Option<&'a [u8; 32]>,
+    pub private_key: Option<&'a PrivateKey>,
     /// 0 to choose randomly
     pub listen_port: Option<u16>,
     /// 0 to disable
@@ -51,7 +50,7 @@ impl<'a> Device<'a> {
         self
     }
 
-    pub fn private_key(mut self, private_key: &'a [u8; 32]) -> Self {
+    pub fn private_key(mut self, private_key: &'a PrivateKey) -> Self {
         self.private_key = Some(private_key);
         self
     }

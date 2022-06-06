@@ -1,4 +1,4 @@
-use crate::linux::err::ParseAttributeError;
+use crate::{crypto::KeyParseError, linux::err::ParseAttributeError};
 use neli::err::{DeError, NlError};
 use thiserror::Error;
 
@@ -35,6 +35,9 @@ pub enum ParseDeviceError {
 
     #[error(transparent)]
     PeerBuilderError(#[from] PeerBuilderError),
+
+    #[error(transparent)]
+    InvalidKeyError(#[from] KeyParseError),
 }
 
 impl From<NlError> for ParseDeviceError {

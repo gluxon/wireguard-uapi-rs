@@ -1,4 +1,7 @@
-use crate::xplatform::protocol::SetKey;
+use crate::{
+    crypto::{Key, PresharedKey, PrivateKey, PublicKey},
+    xplatform::protocol::SetKey,
+};
 use std::fmt::Display;
 use std::net::IpAddr;
 use std::net::SocketAddr;
@@ -11,7 +14,7 @@ pub struct Device {
     /// the interface. The value may be an all zero string in the case of a set
     /// operation, in which case it indicates that the private key should be
     /// removed.
-    pub private_key: Option<[u8; 32]>,
+    pub private_key: Option<PrivateKey>,
 
     /// The value for this is a decimal-string integer corresponding to the
     /// listening port of the interface.
@@ -59,12 +62,12 @@ impl Display for Device {
 
 /// Documentation of each field comes from:
 /// https://www.wireguard.com/xplatform/#configuration-protocol
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Peer {
     /// The value for this key should be a lowercase hex-encoded public key of a
     /// new peer entry, which this command adds. The same public key value may
     /// not repeat during a single message.
-    pub public_key: [u8; 32],
+    pub public_key: PublicKey,
 
     /// This key/value combo is only valid in a set operation, in which case it
     /// indicates that the previously added peer entry should be removed from the
@@ -80,7 +83,7 @@ pub struct Peer {
     /// the previously added peer entry. The value may be an all zero string in
     /// the case of a set operation, in which case it indicates that the
     /// preshared-key should be removed.
-    pub preshared_key: Option<[u8; 32]>,
+    pub preshared_key: Option<Key>,
 
     /// The value for this key is either IP:port for IPv4 or \[IP\]:port for
     /// IPv6, indicating the endpoint of the previously added peer entry.
@@ -105,16 +108,10 @@ pub struct Peer {
 }
 
 impl Peer {
-    pub fn from_public_key(public_key: [u8; 32]) -> Self {
+    pub fn from_public_key(public_key: PublicKey) -> Self {
         Self {
             public_key,
-            remove: None,
-            update_only: None,
-            preshared_key: None,
-            endpoint: None,
-            persistent_keepalive_interval: None,
-            replace_allowed_ips: None,
-            allowed_ips: vec![],
+            ..Default::default()
         }
     }
 
@@ -128,7 +125,7 @@ impl Peer {
         self
     }
 
-    pub fn preshared_key(mut self, preshared_key: [u8; 32]) -> Self {
+    pub fn preshared_key(mut self, preshared_key: PresharedKey) -> Self {
         self.preshared_key = Some(preshared_key);
         self
     }
@@ -151,6 +148,21 @@ impl Peer {
     pub fn allowed_ips(mut self, allowed_ips: Vec<AllowedIp>) -> Self {
         self.allowed_ips = allowed_ips;
         self
+    }
+}
+
+impl Default for Peer {
+    fn default() -> Self {
+        Self {
+            public_key: Key::zero(),
+            remove: None,
+            update_only: None,
+            preshared_key: None,
+            endpoint: None,
+            persistent_keepalive_interval: None,
+            replace_allowed_ips: None,
+            allowed_ips: vec![],
+        }
     }
 }
 
@@ -241,36 +253,36 @@ mod tests {
             remove=true\n";
 
         let set_request = Device {
-            private_key: Some([
+            private_key: Some(Key::from([
                 0xe8, 0x4b, 0x5a, 0x6d, 0x27, 0x17, 0xc1, 0x00, 0x3a, 0x13, 0xb4, 0x31, 0x57, 0x03,
                 0x53, 0xdb, 0xac, 0xa9, 0x14, 0x6c, 0xf1, 0x50, 0xc5, 0xf8, 0x57, 0x56, 0x80, 0xfe,
                 0xba, 0x52, 0x02, 0x7a,
-            ]),
+            ])),
             listen_port: Some(12912),
             fwmark: Some(0),
             replace_peers: Some(true),
             peers: vec![
-                Peer::from_public_key([
+                Peer::from_public_key(Key::from([
                     0xb8, 0x59, 0x96, 0xfe, 0xcc, 0x9c, 0x7f, 0x1f, 0xc6, 0xd2, 0x57, 0x2a, 0x76,
                     0xed, 0xa1, 0x1d, 0x59, 0xbc, 0xd2, 0x0b, 0xe8, 0xe5, 0x43, 0xb1, 0x5c, 0xe4,
                     0xbd, 0x85, 0xa8, 0xe7, 0x5a, 0x33,
-                ])
-                .preshared_key([
+                ]))
+                .preshared_key(Key::from([
                     0x18, 0x85, 0x15, 0x09, 0x3e, 0x95, 0x2f, 0x5f, 0x22, 0xe8, 0x65, 0xce, 0xf3,
                     0x01, 0x2e, 0x72, 0xf8, 0xb5, 0xf0, 0xb5, 0x98, 0xac, 0x03, 0x09, 0xd5, 0xda,
                     0xcc, 0xe3, 0xb7, 0x0f, 0xcf, 0x52,
-                ])
+                ]))
                 .replace_allowed_ips(true)
                 .allowed_ips(vec![AllowedIp {
                     ipaddr: "192.168.4.4".parse().unwrap(),
                     cidr_mask: 32,
                 }])
                 .endpoint("[abcd:23::33%2]:51820".parse().unwrap()),
-                Peer::from_public_key([
+                Peer::from_public_key(Key::from([
                     0x58, 0x40, 0x2e, 0x69, 0x5b, 0xa1, 0x77, 0x2b, 0x1c, 0xc9, 0x30, 0x97, 0x55,
                     0xf0, 0x43, 0x25, 0x1e, 0xa7, 0x7f, 0xdc, 0xf1, 0x0f, 0xbe, 0x63, 0x98, 0x9c,
                     0xeb, 0x7e, 0x19, 0x32, 0x13, 0x76,
-                ])
+                ]))
                 .replace_allowed_ips(true)
                 .allowed_ips(vec![AllowedIp {
                     ipaddr: "192.168.4.6".parse().unwrap(),
@@ -278,11 +290,11 @@ mod tests {
                 }])
                 .persistent_keepalive_interval(111)
                 .endpoint("182.122.22.19:3233".parse().unwrap()),
-                Peer::from_public_key([
+                Peer::from_public_key(Key::from([
                     0x66, 0x2e, 0x14, 0xfd, 0x59, 0x45, 0x56, 0xf5, 0x22, 0x60, 0x47, 0x03, 0x34,
                     0x03, 0x51, 0x25, 0x89, 0x03, 0xb6, 0x4f, 0x35, 0x55, 0x37, 0x63, 0xf1, 0x94,
                     0x26, 0xab, 0x2a, 0x51, 0x5c, 0x58,
-                ])
+                ]))
                 .endpoint("5.152.198.39:51820".parse().unwrap())
                 .replace_allowed_ips(true)
                 .allowed_ips(vec![
@@ -295,11 +307,11 @@ mod tests {
                         cidr_mask: 32,
                     },
                 ]),
-                Peer::from_public_key([
+                Peer::from_public_key(Key::from([
                     0xe8, 0x18, 0xb5, 0x8d, 0xb5, 0x27, 0x40, 0x87, 0xfc, 0xc1, 0xbe, 0x5d, 0xc7,
                     0x28, 0xcf, 0x53, 0xd3, 0xb5, 0x72, 0x6b, 0x4c, 0xef, 0x6b, 0x9b, 0xab, 0x8f,
                     0x8f, 0x8c, 0x24, 0x52, 0xc2, 0x5c,
-                ])
+                ]))
                 .remove(true),
             ],
         };
@@ -322,16 +334,16 @@ mod tests {
         .join("\n");
 
         let set_request = Device {
-            private_key: Some([
+            private_key: Some(Key::from([
                 0xe8, 0x4b, 0x5a, 0x6d, 0x27, 0x17, 0xc1, 0x00, 0x3a, 0x13, 0xb4, 0x31, 0x57, 0x03,
                 0x53, 0xdb, 0xac, 0xa9, 0x14, 0x6c, 0xf1, 0x50, 0xc5, 0xf8, 0x57, 0x56, 0x80, 0xfe,
                 0xba, 0x52, 0x02, 0x7a,
-            ]),
-            peers: vec![Peer::from_public_key([
+            ])),
+            peers: vec![Peer::from_public_key(Key::from([
                 0xb8, 0x59, 0x96, 0xfe, 0xcc, 0x9c, 0x7f, 0x1f, 0xc6, 0xd2, 0x57, 0x2a, 0x76, 0xed,
                 0xa1, 0x1d, 0x59, 0xbc, 0xd2, 0x0b, 0xe8, 0xe5, 0x43, 0xb1, 0x5c, 0xe4, 0xbd, 0x85,
                 0xa8, 0xe7, 0x5a, 0x33,
-            ])
+            ]))
             .update_only(true)
             .replace_allowed_ips(true)
             .allowed_ips(vec![AllowedIp {
@@ -354,16 +366,13 @@ mod tests {
         assert_eq!(device1, device2);
         format!("{:?}", device1);
 
-        let peer1 = Peer::from_public_key([
+        let pubkey = Key::from([
             0xb8, 0x59, 0x96, 0xfe, 0xcc, 0x9c, 0x7f, 0x1f, 0xc6, 0xd2, 0x57, 0x2a, 0x76, 0xed,
             0xa1, 0x1d, 0x59, 0xbc, 0xd2, 0x0b, 0xe8, 0xe5, 0x43, 0xb1, 0x5c, 0xe4, 0xbd, 0x85,
             0xa8, 0xe7, 0x5a, 0x33,
         ]);
-        let peer2 = Peer::from_public_key([
-            0xb8, 0x59, 0x96, 0xfe, 0xcc, 0x9c, 0x7f, 0x1f, 0xc6, 0xd2, 0x57, 0x2a, 0x76, 0xed,
-            0xa1, 0x1d, 0x59, 0xbc, 0xd2, 0x0b, 0xe8, 0xe5, 0x43, 0xb1, 0x5c, 0xe4, 0xbd, 0x85,
-            0xa8, 0xe7, 0x5a, 0x33,
-        ]);
+        let peer1 = Peer::from_public_key(pubkey);
+        let peer2 = Peer::from_public_key(pubkey);
         assert_eq!(peer1, peer2);
         format!("{:?}", peer1);
 

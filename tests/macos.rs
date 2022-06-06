@@ -8,6 +8,7 @@ mod tests {
     use std::path::PathBuf;
     use std::process::Command;
     use tempfile::NamedTempFile;
+    use wireguard_uapi::crypto::Key;
 
     const MACOS_WG_SOCK_DIR: &str = "/var/run/wireguard";
 
@@ -75,7 +76,7 @@ mod tests {
         let interface = client.get()?;
         assert_eq!(interface.private_key, None);
 
-        let private_key = curve25519_clamp(rand::random());
+        let private_key = Key::from(curve25519_clamp(rand::random()));
         client.set(set::Device {
             private_key: Some(private_key),
             ..Default::default()
