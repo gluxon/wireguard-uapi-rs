@@ -12,6 +12,9 @@ readme = "README.md"
 all-features = true
 
 [[example]]
+name = "wg"
+
+[[example]]
 name = "xplatform"
 required-features = ["xplatform"]
 
