@@ -102,9 +102,11 @@ impl IncubatingDeviceFragment {
     }
 
     fn from_interface(interface: &DeviceInterface) -> Result<Self, NlError> {
-        let mut interface_attr = GenlBuffer::new();
-
-        interface_attr.push(interface.try_into()?);
+        let interface_attr = {
+            let mut buffer = GenlBuffer::new();
+            buffer.push(interface.try_into()?);
+            buffer
+        };
 
         Ok(Self {
             partial_device: interface_attr,

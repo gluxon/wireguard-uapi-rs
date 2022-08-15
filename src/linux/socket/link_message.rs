@@ -38,11 +38,13 @@ pub fn link_message(
         let ifi_type = Arphrd::Netrom;
         let ifi_index = 0;
         let ifi_flags = IffFlags::empty();
-        let mut rtattrs = RtBuffer::new();
         let ifi_change = IffFlags::new(&[Iff::Up]);
-
-        rtattrs.push(ifname);
-        rtattrs.push(link);
+        let rtattrs = {
+            let mut buffer = RtBuffer::new();
+            buffer.push(ifname);
+            buffer.push(link);
+            buffer
+        };
 
         Ifinfomsg::new(
             ifi_family, ifi_type, ifi_index, ifi_flags, ifi_change, rtattrs,
