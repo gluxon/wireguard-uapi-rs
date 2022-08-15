@@ -1,6 +1,7 @@
 use crate::get;
 use crate::linux::attr::WgDeviceAttribute;
 use crate::linux::cmd::WgCmd;
+use crate::linux::consts::NLA_NETWORK_ORDER;
 use crate::linux::consts::{WG_GENL_NAME, WG_GENL_VERSION};
 use crate::linux::err::{ConnectError, GetDeviceError, SetDeviceError};
 use crate::linux::set;
@@ -57,11 +58,21 @@ impl WgSocket {
                 Some(name.len())
                     .filter(|&len| 0 < len && len < IFNAMSIZ)
                     .ok_or(GetDeviceError::InvalidInterfaceName)?;
-                Nlattr::new(None, false, false, WgDeviceAttribute::Ifname, name.as_ref())?
+                Nlattr::new(
+                    None,
+                    false,
+                    NLA_NETWORK_ORDER,
+                    WgDeviceAttribute::Ifname,
+                    name.as_ref(),
+                )?
             }
-            DeviceInterface::Index(index) => {
-                Nlattr::new(None, false, false, WgDeviceAttribute::Ifindex, index)?
-            }
+            DeviceInterface::Index(index) => Nlattr::new(
+                None,
+                false,
+                NLA_NETWORK_ORDER,
+                WgDeviceAttribute::Ifindex,
+                index,
+            )?,
         };
         let genlhdr = {
             let cmd = WgCmd::GetDevice;

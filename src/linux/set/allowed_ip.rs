@@ -1,5 +1,6 @@
 use crate::linux::attr::NLA_F_NESTED;
 use crate::linux::attr::{NlaNested, WgAllowedIpAttribute};
+use crate::linux::consts::NLA_NETWORK_ORDER;
 use neli::err::NlError;
 use neli::genl::Nlattr;
 use neli::types::Buffer;
@@ -35,7 +36,7 @@ impl<'a> TryFrom<&AllowedIp<'a>> for Nlattr<NlaNested, Buffer> {
         nested.add_nested_attribute(&Nlattr::new(
             None,
             false,
-            false,
+            NLA_NETWORK_ORDER,
             WgAllowedIpAttribute::Family,
             &family.to_ne_bytes()[..],
         )?)?;
@@ -47,7 +48,7 @@ impl<'a> TryFrom<&AllowedIp<'a>> for Nlattr<NlaNested, Buffer> {
         nested.add_nested_attribute(&Nlattr::new(
             None,
             false,
-            false,
+            NLA_NETWORK_ORDER,
             WgAllowedIpAttribute::IpAddr,
             ipaddr,
         )?)?;
@@ -59,7 +60,7 @@ impl<'a> TryFrom<&AllowedIp<'a>> for Nlattr<NlaNested, Buffer> {
         nested.add_nested_attribute(&Nlattr::new(
             None,
             false,
-            false,
+            NLA_NETWORK_ORDER,
             WgAllowedIpAttribute::CidrMask,
             &cidr_mask.to_ne_bytes()[..],
         )?)?;

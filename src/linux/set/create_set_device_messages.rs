@@ -2,6 +2,7 @@ use super::{AllowedIp, Device, Peer};
 use crate::linux::attr::NLA_F_NESTED;
 use crate::linux::attr::{NlaNested, WgDeviceAttribute, WgPeerAttribute};
 use crate::linux::cmd::WgCmd;
+use crate::linux::consts::NLA_NETWORK_ORDER;
 use crate::linux::consts::WG_GENL_VERSION;
 use crate::linux::socket::NlWgMsgType;
 use crate::linux::DeviceInterface;
@@ -47,7 +48,7 @@ impl IncubatingDeviceFragment {
                     attrs.push(Nlattr::new(
                         None,
                         false,
-                        false,
+                        NLA_NETWORK_ORDER,
                         WgDeviceAttribute::Flags,
                         unique.drain(..).map(|flag| flag as u32).sum::<u32>(),
                     )?);
@@ -57,7 +58,7 @@ impl IncubatingDeviceFragment {
                     attrs.push(Nlattr::new(
                         None,
                         false,
-                        false,
+                        NLA_NETWORK_ORDER,
                         WgDeviceAttribute::PrivateKey,
                         &private_key[..],
                     )?);
@@ -67,7 +68,7 @@ impl IncubatingDeviceFragment {
                     attrs.push(Nlattr::new(
                         None,
                         false,
-                        false,
+                        NLA_NETWORK_ORDER,
                         WgDeviceAttribute::ListenPort,
                         &listen_port.to_ne_bytes()[..],
                     )?);
@@ -77,7 +78,7 @@ impl IncubatingDeviceFragment {
                     attrs.push(Nlattr::new(
                         None,
                         false,
-                        false,
+                        NLA_NETWORK_ORDER,
                         WgDeviceAttribute::Fwmark,
                         fwmark,
                     )?);
@@ -91,7 +92,7 @@ impl IncubatingDeviceFragment {
             peers: Nlattr::new(
                 None,
                 false,
-                false,
+                NLA_NETWORK_ORDER,
                 WgDeviceAttribute::Peers | NLA_F_NESTED,
                 vec![],
             )?,
@@ -110,7 +111,7 @@ impl IncubatingDeviceFragment {
             peers: Nlattr::new(
                 None,
                 false,
-                false,
+                NLA_NETWORK_ORDER,
                 WgDeviceAttribute::Peers | NLA_F_NESTED,
                 vec![],
             )?,
@@ -157,13 +158,18 @@ struct IncubatingPeerFragment {
 
 impl IncubatingPeerFragment {
     fn split_off_allowed_ips(peer: Peer<'_>) -> Result<(Self, Vec<AllowedIp<'_>>), NlError> {
-        let mut partial_peer =
-            Nlattr::new(None, false, false, NlaNested::Unspec | NLA_F_NESTED, vec![])?;
+        let mut partial_peer = Nlattr::new(
+            None,
+            false,
+            NLA_NETWORK_ORDER,
+            NlaNested::Unspec | NLA_F_NESTED,
+            vec![],
+        )?;
 
         let public_key = Nlattr::new(
             None,
             false,
-            false,
+            NLA_NETWORK_ORDER,
             WgPeerAttribute::PublicKey,
             peer.public_key.to_vec(),
         )?;
@@ -176,7 +182,7 @@ impl IncubatingPeerFragment {
             partial_peer.add_nested_attribute(&Nlattr::new(
                 None,
                 false,
-                false,
+                NLA_NETWORK_ORDER,
                 WgPeerAttribute::Flags,
                 unique.drain(..).map(|flag| flag as u32).sum::<u32>(),
             )?)?;
@@ -186,7 +192,7 @@ impl IncubatingPeerFragment {
             partial_peer.add_nested_attribute(&Nlattr::new(
                 None,
                 false,
-                false,
+                NLA_NETWORK_ORDER,
                 WgPeerAttribute::PresharedKey,
                 &preshared_key[..],
             )?)?;
@@ -220,7 +226,7 @@ impl IncubatingPeerFragment {
             partial_peer.add_nested_attribute(&Nlattr::new(
                 None,
                 false,
-                false,
+                NLA_NETWORK_ORDER,
                 WgPeerAttribute::Endpoint,
                 payload,
             )?)?;
@@ -230,7 +236,7 @@ impl IncubatingPeerFragment {
             partial_peer.add_nested_attribute(&Nlattr::new(
                 None,
                 false,
-                false,
+                NLA_NETWORK_ORDER,
                 WgPeerAttribute::PersistentKeepaliveInterval,
                 &persistent_keepalive_interval.to_ne_bytes()[..],
             )?)?;
@@ -240,7 +246,7 @@ impl IncubatingPeerFragment {
             partial_peer.add_nested_attribute(&Nlattr::new(
                 None,
                 false,
-                false,
+                NLA_NETWORK_ORDER,
                 WgPeerAttribute::ProtocolVersion,
                 protocol_version,
             )?)?;
@@ -254,7 +260,7 @@ impl IncubatingPeerFragment {
             allowed_ips: Nlattr::new(
                 None,
                 false,
-                false,
+                NLA_NETWORK_ORDER,
                 WgPeerAttribute::AllowedIps | NLA_F_NESTED,
                 vec![],
             )?,
@@ -269,7 +275,7 @@ impl IncubatingPeerFragment {
         let allowed_ips = Nlattr::new(
             None,
             false,
-            false,
+            NLA_NETWORK_ORDER,
             WgPeerAttribute::AllowedIps | NLA_F_NESTED,
             vec![],
         )?;
@@ -277,7 +283,7 @@ impl IncubatingPeerFragment {
         let public_key = Nlattr::new(
             None,
             false,
-            false,
+            NLA_NETWORK_ORDER,
             WgPeerAttribute::PublicKey,
             public_key.to_vec(),
         )?;
