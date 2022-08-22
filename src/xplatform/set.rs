@@ -191,7 +191,7 @@ impl Display for Peer {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AllowedIp {
     pub ipaddr: IpAddr,
     pub cidr_mask: u8,
