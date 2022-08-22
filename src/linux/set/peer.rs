@@ -1,7 +1,7 @@
 use crate::set::AllowedIp;
 use std::net::SocketAddr;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[repr(u32)]
 pub enum WgPeerF {
     RemoveMe = 1u32 << 0,

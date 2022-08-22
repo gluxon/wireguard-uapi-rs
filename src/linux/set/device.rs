@@ -2,7 +2,7 @@ use crate::set::Peer;
 use crate::DeviceInterface;
 use std::borrow::Cow;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[repr(u32)]
 pub enum WgDeviceF {
     ReplacePeers = 1,

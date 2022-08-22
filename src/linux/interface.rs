@@ -4,7 +4,7 @@ use neli::nlattr::Nlattr;
 use std::borrow::Cow;
 use std::convert::TryFrom;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum DeviceInterface<'a> {
     Index(u32),
     Name(Cow<'a, str>),
