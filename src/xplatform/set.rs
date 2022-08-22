@@ -5,7 +5,7 @@ use std::net::SocketAddr;
 
 /// Documentation of each field comes from:
 /// https://www.wireguard.com/xplatform/#configuration-protocol
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Eq)]
 pub struct Device {
     /// The value for this key should be a lowercase hex-encoded private key of
     /// the interface. The value may be an all zero string in the case of a set
@@ -59,7 +59,7 @@ impl Display for Device {
 
 /// Documentation of each field comes from:
 /// https://www.wireguard.com/xplatform/#configuration-protocol
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Peer {
     /// The value for this key should be a lowercase hex-encoded public key of a
     /// new peer entry, which this command adds. The same public key value may
