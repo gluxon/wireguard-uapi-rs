@@ -1,6 +1,6 @@
 # wireguard-uapi-rs
 
-[![Build Status](https://github.com/gluxon/wireguard-uapi-rs/workflows/Rust/badge.svg?branch=develop)](https://github.com/gluxon/wireguard-uapi-rs/actions?query=workflow%3ARust)
+[![Build Status](https://github.com/gluxon/wireguard-uapi-rs/workflows/Rust/badge.svg?branch=main)](https://github.com/gluxon/wireguard-uapi-rs/actions/workflows/rust.yml?query=branch%3Amain)
 [![codecov](https://codecov.io/gh/gluxon/wireguard-uapi-rs/branch/develop/graph/badge.svg)](https://codecov.io/gh/gluxon/wireguard-uapi-rs)
 [![Crates version](https://img.shields.io/crates/v/wireguard-uapi.svg)](https://crates.io/crates/wireguard-uapi)
 [![docs.rs](https://docs.rs/wireguard-uapi/badge.svg)](https://docs.rs/wireguard-uapi)
