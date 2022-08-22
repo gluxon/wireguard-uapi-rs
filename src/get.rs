@@ -3,7 +3,7 @@ use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
 use std::time::Duration;
 
-#[derive(Builder, Debug, PartialEq)]
+#[derive(Builder, Debug, PartialEq, Eq)]
 pub struct Device {
     pub ifindex: u32,
     pub ifname: String,
@@ -17,7 +17,7 @@ pub struct Device {
     pub peers: Vec<Peer>,
 }
 
-#[derive(Builder, Clone, Debug, PartialEq)]
+#[derive(Builder, Clone, Debug, PartialEq, Eq)]
 pub struct Peer {
     // The public_key and allowed_ips fields are public to
     // make peer coalescing easier.
@@ -35,14 +35,14 @@ pub struct Peer {
     pub protocol_version: u32,
 }
 
-#[derive(Builder, Clone, Debug, PartialEq)]
+#[derive(Builder, Clone, Debug, PartialEq, Eq)]
 pub struct AllowedIp {
     pub family: u16,
     pub ipaddr: IpAddr,
     pub cidr_mask: u8,
 }
 
-#[derive(Debug, thiserror::Error, PartialEq)]
+#[derive(Debug, thiserror::Error, PartialEq, Eq)]
 pub enum ParseAllowedIpError {
     #[error("String is missing CIDR mask: `${0}`")]
     MissingCidrMask(String),
