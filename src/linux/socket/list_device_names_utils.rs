@@ -1,4 +1,6 @@
 use crate::err::ListDevicesError;
+use neli::attr::Attribute;
+use neli::rtnl::Rtattr;
 use neli::{
     consts::{
         nl::{NlTypeWrapper, NlmF, NlmFFlags},
@@ -45,19 +47,33 @@ impl TryFrom<Nlmsghdr<NlTypeWrapper, Ifinfomsg>> for PotentialWireGuardDeviceNam
     type Error = ListDevicesError;
 
     fn try_from(response: Nlmsghdr<NlTypeWrapper, Ifinfomsg>) -> Result<Self, Self::Error> {
-        let mut handle = response.get_payload()?.rtattrs.get_attr_handle();
+        let mut is_wireguard = false;
+        let mut ifname: Option<String> = None;
+
+        let handle = response.get_payload()?.rtattrs.get_attr_handle();
+
+        for attr in handle.get_attrs() {
+            match attr.rta_type {
+                Ifla::Linkinfo => {
+                    for info_kind in attr
+                        .get_attr_handle()?
+                        .iter()
+                        .filter(|attr: &&Rtattr<IflaInfo, _>| attr.rta_type == IflaInfo::Kind)
+                    {
+                        is_wireguard |= info_kind.get_payload_as::<String>()?
+                            == crate::linux::consts::WG_GENL_NAME;
+                    }
+                }
+                Ifla::Ifname => {
+                    ifname = Some(attr.get_payload_as::<String>()?);
+                }
+                _ => {}
+            }
+        }
 
         Ok(PotentialWireGuardDeviceName {
-            ifname: handle.get_attr_payload_as::<String>(Ifla::Ifname).ok(),
-            is_wireguard: handle
-                .get_nested_attributes(Ifla::Linkinfo)
-                .map_or(false, |linkinfo| {
-                    linkinfo
-                        .get_attr_payload_as::<String>(IflaInfo::Kind)
-                        .map_or(false, |info_kind| {
-                            info_kind == crate::linux::consts::WG_GENL_NAME
-                        })
-                }),
+            ifname,
+            is_wireguard,
         })
     }
 }
