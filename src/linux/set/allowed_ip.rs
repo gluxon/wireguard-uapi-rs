@@ -5,7 +5,7 @@ use neli::nlattr::Nlattr;
 use std::convert::TryFrom;
 use std::net::IpAddr;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AllowedIp<'a> {
     pub ipaddr: &'a IpAddr,
     pub cidr_mask: Option<u8>,
