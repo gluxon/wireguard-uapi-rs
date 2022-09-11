@@ -1,8 +1,5 @@
 use crate::linux::attr::WgDeviceAttribute;
-use neli::err::SerError;
-use neli::nlattr::Nlattr;
 use std::borrow::Cow;
-use std::convert::TryFrom;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum DeviceInterface<'a> {
@@ -20,18 +17,11 @@ impl<'a> DeviceInterface<'a> {
     }
 }
 
-impl<'a> TryFrom<&DeviceInterface<'a>> for Nlattr<WgDeviceAttribute, Vec<u8>> {
-    type Error = SerError;
-
-    fn try_from(interface: &DeviceInterface) -> Result<Self, Self::Error> {
-        let attr = match interface {
-            &DeviceInterface::Index(ifindex) => {
-                Nlattr::new(None, WgDeviceAttribute::Ifindex, ifindex)?
-            }
-            DeviceInterface::Name(ifname) => {
-                Nlattr::new(None, WgDeviceAttribute::Ifname, ifname.as_ref())?
-            }
+impl<'a> From<&DeviceInterface<'a>> for WgDeviceAttribute {
+    fn from(interface: &DeviceInterface) -> Self {
+        return match interface {
+            &DeviceInterface::Index(ifindex) => WgDeviceAttribute::Ifindex(ifindex),
+            DeviceInterface::Name(ifname) => WgDeviceAttribute::Ifname(ifname.to_string()),
         };
-        Ok(attr)
     }
 }

@@ -1,57 +1,31 @@
-use neli::consts::NlAttrType;
-use neli::{impl_var, impl_var_base, impl_var_trait};
+use nldl::attr::Nested;
+use nldl::attr::UnknownAttribute;
 use std::fmt;
 
-// As of neli 0.4.3, the NLA_F_NESTED flag needs to be added to newly created
-// attribute types and the NLA_TYPE_MASK mask needs to be applied to read types.
-// A future version of neli should do this automatically. At that point the
-// below consts can be deleted.
-pub(crate) const NLA_F_NESTED: u16 = libc::NLA_F_NESTED as u16;
-pub(crate) const NLA_TYPE_MASK: u16 = libc::NLA_TYPE_MASK as u16;
-
-macro_rules! impl_bit_ops_for_nla {
-    ($name:ident) => {
-        impl std::ops::BitOr<u16> for $name {
-            type Output = Self;
-
-            fn bitor(self, rhs: u16) -> Self {
-                Self::from(u16::from(self) | rhs)
-            }
-        }
-
-        impl std::ops::BitAnd<u16> for $name {
-            type Output = Self;
-
-            fn bitand(self, rhs: u16) -> Self {
-                Self::from(u16::from(self) & rhs)
-            }
-        }
-    };
-}
-
-impl_var_trait!(
-    NlaNested, u16, NlAttrType,
-    Unspec => 0,
-    // neli requires 1 non-zero argument even though WireGuard
-    // does not use it.
-    Unused => 1
-);
-
-impl_bit_ops_for_nla!(NlaNested);
-
 // https://github.com/WireGuard/WireGuard/blob/62b335b56cc99312ccedfa571500fbef3756a623/src/uapi/wireguard.h#L147
-impl_var_trait!(
-    WgDeviceAttribute, u16, NlAttrType,
-    Unspec => 0,
-    Ifindex => 1,
-    Ifname => 2,
-    PrivateKey => 3,
-    PublicKey => 4,
-    Flags => 5,
-    ListenPort => 6,
-    Fwmark => 7,
-    Peers => 8
-);
+#[derive(Debug, PartialEq, nldl::attr::Serialize, nldl::attr::Deserialize)]
+pub enum WgDeviceAttribute {
+    #[nla_type(0)]
+    Unspec,
+    #[nla_type(1)]
+    Ifindex(u32),
+    #[nla_type(2)]
+    Ifname(String),
+    #[nla_type(3)]
+    PrivateKey(Vec<u8>), // TODO: Make this a [u8; 32] wrapper type.
+    #[nla_type(4)]
+    PublicKey(Vec<u8>), // TODO: Make this a [u8; 32] wrapper type.
+    #[nla_type(5)]
+    Flags(u32),
+    #[nla_type(6)]
+    ListenPort(u16),
+    #[nla_type(7)]
+    Fwmark(u32),
+    #[nla_type(8)]
+    Peers(Vec<Nested<WgPeerAttribute>>),
+    #[nla_type(_)]
+    Unknown(UnknownAttribute),
+}
 
 impl fmt::Display for WgDeviceAttribute {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -59,23 +33,34 @@ impl fmt::Display for WgDeviceAttribute {
     }
 }
 
-impl_bit_ops_for_nla!(WgDeviceAttribute);
-
 // https://github.com/WireGuard/WireGuard/blob/62b335b56cc99312ccedfa571500fbef3756a623/src/uapi/wireguard.h#L165
-impl_var_trait!(
-    WgPeerAttribute, u16, NlAttrType,
-    Unspec => 0,
-    PublicKey => 1,
-    PresharedKey => 2,
-    Flags => 3,
-    Endpoint => 4,
-    PersistentKeepaliveInterval => 5,
-    LastHandshakeTime => 6,
-    RxBytes => 7,
-    TxBytes => 8,
-    AllowedIps => 9,
-    ProtocolVersion => 10
-);
+#[derive(Debug, PartialEq, nldl::attr::Serialize, nldl::attr::Deserialize)]
+pub enum WgPeerAttribute {
+    #[nla_type(0)]
+    Unspec,
+    #[nla_type(1)]
+    PublicKey(Vec<u8>),
+    #[nla_type(2)]
+    PresharedKey(Vec<u8>),
+    #[nla_type(3)]
+    Flags(u32),
+    #[nla_type(4)]
+    Endpoint(Vec<u8>), // TODO: Set this to SocketAddr
+    #[nla_type(5)]
+    PersistentKeepaliveInterval(u16),
+    #[nla_type(6)]
+    LastHandshakeTime(Vec<u8>),
+    #[nla_type(7)]
+    RxBytes(u64),
+    #[nla_type(8)]
+    TxBytes(u64),
+    #[nla_type(9)]
+    AllowedIps(Vec<Nested<WgAllowedIpAttribute>>),
+    #[nla_type(10)]
+    ProtocolVersion(u32),
+    #[nla_type(_)]
+    Unknown(UnknownAttribute),
+}
 
 impl fmt::Display for WgPeerAttribute {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -83,13 +68,17 @@ impl fmt::Display for WgPeerAttribute {
     }
 }
 
-impl_bit_ops_for_nla!(WgPeerAttribute);
-
 // https://github.com/WireGuard/WireGuard/blob/62b335b56cc99312ccedfa571500fbef3756a623/src/uapi/wireguard.h#L181
-impl_var_trait!(
-    WgAllowedIpAttribute, u16, NlAttrType,
-    Unspec => 0,
-    Family => 1,
-    IpAddr => 2,
-    CidrMask => 3
-);
+#[derive(Debug, PartialEq, nldl::attr::Serialize, nldl::attr::Deserialize)]
+pub enum WgAllowedIpAttribute {
+    #[nla_type(0)]
+    Unspec,
+    #[nla_type(1)]
+    Family(u16),
+    #[nla_type(2)]
+    IpAddr(Vec<u8>), // TODO
+    #[nla_type(3)]
+    CidrMask(u8),
+    #[nla_type(_)]
+    Unknown(UnknownAttribute),
+}
