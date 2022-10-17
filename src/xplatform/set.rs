@@ -119,12 +119,12 @@ impl Peer {
     }
 
     pub fn remove(mut self, remove: bool) -> Self {
-        self.remove = remove.then(|| true);
+        self.remove = remove.then_some(true);
         self
     }
 
     pub fn update_only(mut self, update_only: bool) -> Self {
-        self.update_only = update_only.then(|| true);
+        self.update_only = update_only.then_some(true);
         self
     }
 
@@ -144,7 +144,7 @@ impl Peer {
     }
 
     pub fn replace_allowed_ips(mut self, replace_allowed_ips: bool) -> Self {
-        self.replace_allowed_ips = replace_allowed_ips.then(|| true);
+        self.replace_allowed_ips = replace_allowed_ips.then_some(true);
         self
     }
 
