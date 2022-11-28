@@ -55,7 +55,7 @@ fn print_peer(peer: &Peer) {
     println!(
         "{}: {}",
         "peer".yellow(),
-        base64::encode(&peer.public_key).yellow()
+        base64::encode(peer.public_key).yellow()
     );
     if let Some(endpoint) = peer.endpoint {
         println!("  {}: {}", "endpoint".black().bold(), endpoint);
