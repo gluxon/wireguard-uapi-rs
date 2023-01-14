@@ -23,7 +23,7 @@ impl TryFrom<AttrHandle<'_, WgDeviceAttribute>> for Device {
         let mut device_builder = DeviceBuilder::default();
 
         for attr in handle.iter() {
-            match attr.nla_type & NLA_TYPE_MASK {
+            match attr.nla_type.nla_type & NLA_TYPE_MASK {
                 WgDeviceAttribute::Unspec => {
                     // The embeddable-wg-library example ignores unspec, so we'll do the same.
                 }
@@ -51,7 +51,7 @@ impl TryFrom<AttrHandle<'_, WgDeviceAttribute>> for Device {
                 WgDeviceAttribute::Flags => {
                     // This attribute is for set_device. Ignore it for get_device.
                 }
-                WgDeviceAttribute::UnrecognizedVariant(i) => {
+                WgDeviceAttribute::UnrecognizedConst(i) => {
                     return Err(ParseDeviceError::UnknownDeviceAttributeError { id: i })
                 }
             }
@@ -63,14 +63,14 @@ impl TryFrom<AttrHandle<'_, WgDeviceAttribute>> for Device {
 
 pub fn extend_device(
     mut device: Device,
-    handle: AttrHandle<WgDeviceAttribute>,
+    handle: AttrHandle<'_, WgDeviceAttribute>,
 ) -> Result<Device, ParseDeviceError> {
     let next_peers = {
         let peers_attr = handle
             .iter()
-            .find(|attr| attr.nla_type & NLA_TYPE_MASK == WgDeviceAttribute::Peers)
+            .find(|attr| attr.nla_type.nla_type & NLA_TYPE_MASK == WgDeviceAttribute::Peers)
             .expect("Unable to find additional peers to coalesce.");
-        let handle = peers_attr.get_attr_handle::<NlaNested>()?;
+        let handle = peers_attr.get_attr_handle()?;
 
         handle
             .iter()
@@ -100,11 +100,11 @@ pub fn extend_device(
     Ok(device)
 }
 
-pub fn parse_peers(handle: AttrHandle<NlaNested>) -> Result<Vec<Peer>, ParseDeviceError> {
+pub fn parse_peers(handle: AttrHandle<'_, NlaNested>) -> Result<Vec<Peer>, ParseDeviceError> {
     let mut peers = vec![];
 
     for peer in handle.iter() {
-        let handle = peer.get_attr_handle::<WgPeerAttribute>()?;
+        let handle = peer.get_attr_handle()?;
         peers.push(Peer::try_from(handle)?);
     }
 
@@ -112,12 +112,12 @@ pub fn parse_peers(handle: AttrHandle<NlaNested>) -> Result<Vec<Peer>, ParseDevi
 }
 
 pub fn parse_peer_builder(
-    handle: AttrHandle<WgPeerAttribute>,
+    handle: AttrHandle<'_, WgPeerAttribute>,
 ) -> Result<PeerBuilder, ParseDeviceError> {
     let mut peer_builder = PeerBuilder::default();
 
     for attr in handle.iter() {
-        match attr.nla_type & NLA_TYPE_MASK {
+        match attr.nla_type.nla_type & NLA_TYPE_MASK {
             WgPeerAttribute::Unspec => {}
             WgPeerAttribute::Flags => {}
             WgPeerAttribute::PublicKey => {
@@ -144,14 +144,13 @@ pub fn parse_peer_builder(
                 peer_builder.tx_bytes(parse_nla_u64(attr.nla_payload.as_ref())?);
             }
             WgPeerAttribute::AllowedIps => {
-                if let Some(handle) = handle.get_attribute(WgPeerAttribute::AllowedIps) {
-                    peer_builder.allowed_ips(parse_allowedips(handle.get_attr_handle()?)?);
-                }
+                let handle = attr.get_attr_handle()?;
+                peer_builder.allowed_ips(parse_allowedips(handle)?);
             }
             WgPeerAttribute::ProtocolVersion => {
                 peer_builder.protocol_version(parse_nla_u32(attr.nla_payload.as_ref())?);
             }
-            WgPeerAttribute::UnrecognizedVariant(i) => {
+            WgPeerAttribute::UnrecognizedConst(i) => {
                 return Err(ParseDeviceError::UnknownPeerAttributeError { id: i })
             }
         }
@@ -162,14 +161,15 @@ pub fn parse_peer_builder(
 
 impl TryFrom<AttrHandle<'_, WgPeerAttribute>> for Peer {
     type Error = ParseDeviceError;
-
     fn try_from(handle: AttrHandle<'_, WgPeerAttribute>) -> Result<Self, Self::Error> {
         let peer_builder = parse_peer_builder(handle)?;
         Ok(peer_builder.build()?)
     }
 }
 
-pub fn parse_allowedips(handle: AttrHandle<NlaNested>) -> Result<Vec<AllowedIp>, ParseDeviceError> {
+pub fn parse_allowedips(
+    handle: AttrHandle<'_, NlaNested>,
+) -> Result<Vec<AllowedIp>, ParseDeviceError> {
     let mut allowed_ips = vec![];
 
     for allowed_ip in handle.iter() {
@@ -189,7 +189,7 @@ impl TryFrom<AttrHandle<'_, WgAllowedIpAttribute>> for AllowedIp {
 
         for attr in handle.iter() {
             let payload = attr.nla_payload.as_ref();
-            match attr.nla_type {
+            match attr.nla_type.nla_type {
                 WgAllowedIpAttribute::Unspec => {}
                 WgAllowedIpAttribute::Family => {
                     allowed_ip_builder.family(parse_nla_u16(payload)?);
@@ -209,7 +209,7 @@ impl TryFrom<AttrHandle<'_, WgAllowedIpAttribute>> for AllowedIp {
                 WgAllowedIpAttribute::CidrMask => {
                     allowed_ip_builder.cidr_mask(parse_nla_u8(payload)?);
                 }
-                WgAllowedIpAttribute::UnrecognizedVariant(i) => {
+                WgAllowedIpAttribute::UnrecognizedConst(i) => {
                     return Err(ParseDeviceError::UnknownAllowedIpAttributeError { id: i })
                 }
             }
@@ -354,7 +354,7 @@ mod tests {
     use super::*;
     use crate::linux::cmd::WgCmd;
     use anyhow::Error;
-    use neli::{err::DeError, genl::Genlmsghdr, Nl};
+    use neli::{err::DeError, genl::Genlmsghdr};
 
     // This device comes from the configuration example in "man wg", but with
     // the third peer removed since it specifies an domain endpoint only valid
@@ -427,7 +427,8 @@ mod tests {
     fn create_test_genlmsghdr(
         payload: &[u8],
     ) -> Result<Genlmsghdr<WgCmd, WgDeviceAttribute>, DeError> {
-        Genlmsghdr::deserialize(payload)
+        use neli::FromBytesWithInput;
+        Genlmsghdr::from_bytes_with_input(&mut std::io::Cursor::new(payload), payload.len())
     }
 
     #[test]

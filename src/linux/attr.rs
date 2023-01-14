@@ -1,5 +1,5 @@
 use neli::consts::genl::NlAttrType;
-use neli::impl_var;
+use neli::neli_enum;
 use std::fmt;
 
 // As of neli 0.4.3, the NLA_F_NESTED flag needs to be added to newly created
@@ -29,31 +29,31 @@ macro_rules! impl_bit_ops_for_nla {
     };
 }
 
-impl_var!(
-    pub NlaNested, u16,
-    Unspec => 0,
+#[neli_enum(serialized_type = "u16")]
+pub enum NlaNested {
+    Unspec = 0,
     // neli requires 1 non-zero argument even though WireGuard
     // does not use it.
-    Unused => 1
-);
+    Unused = 1,
+}
 
 impl NlAttrType for NlaNested {}
 
 impl_bit_ops_for_nla!(NlaNested);
 
 // https://github.com/WireGuard/WireGuard/blob/62b335b56cc99312ccedfa571500fbef3756a623/src/uapi/wireguard.h#L147
-impl_var!(
-    pub WgDeviceAttribute, u16,
-    Unspec => 0,
-    Ifindex => 1,
-    Ifname => 2,
-    PrivateKey => 3,
-    PublicKey => 4,
-    Flags => 5,
-    ListenPort => 6,
-    Fwmark => 7,
-    Peers => 8
-);
+#[neli_enum(serialized_type = "u16")]
+pub enum WgDeviceAttribute {
+    Unspec = 0,
+    Ifindex = 1,
+    Ifname = 2,
+    PrivateKey = 3,
+    PublicKey = 4,
+    Flags = 5,
+    ListenPort = 6,
+    Fwmark = 7,
+    Peers = 8,
+}
 
 impl NlAttrType for WgDeviceAttribute {}
 
@@ -66,20 +66,20 @@ impl fmt::Display for WgDeviceAttribute {
 impl_bit_ops_for_nla!(WgDeviceAttribute);
 
 // https://github.com/WireGuard/WireGuard/blob/62b335b56cc99312ccedfa571500fbef3756a623/src/uapi/wireguard.h#L165
-impl_var!(
-    pub WgPeerAttribute, u16,
-    Unspec => 0,
-    PublicKey => 1,
-    PresharedKey => 2,
-    Flags => 3,
-    Endpoint => 4,
-    PersistentKeepaliveInterval => 5,
-    LastHandshakeTime => 6,
-    RxBytes => 7,
-    TxBytes => 8,
-    AllowedIps => 9,
-    ProtocolVersion => 10
-);
+#[neli_enum(serialized_type = "u16")]
+pub enum WgPeerAttribute {
+    Unspec = 0,
+    PublicKey = 1,
+    PresharedKey = 2,
+    Flags = 3,
+    Endpoint = 4,
+    PersistentKeepaliveInterval = 5,
+    LastHandshakeTime = 6,
+    RxBytes = 7,
+    TxBytes = 8,
+    AllowedIps = 9,
+    ProtocolVersion = 10,
+}
 
 impl NlAttrType for WgPeerAttribute {}
 
@@ -92,11 +92,12 @@ impl fmt::Display for WgPeerAttribute {
 impl_bit_ops_for_nla!(WgPeerAttribute);
 
 // https://github.com/WireGuard/WireGuard/blob/62b335b56cc99312ccedfa571500fbef3756a623/src/uapi/wireguard.h#L181
-impl_var!(
-    pub WgAllowedIpAttribute, u16,
-    Unspec => 0,
-    Family => 1,
-    IpAddr => 2,
-    CidrMask => 3
-);
+#[neli_enum(serialized_type = "u16")]
+pub enum WgAllowedIpAttribute {
+    Unspec = 0,
+    Family = 1,
+    IpAddr = 2,
+    CidrMask = 3,
+}
+
 impl NlAttrType for WgAllowedIpAttribute {}

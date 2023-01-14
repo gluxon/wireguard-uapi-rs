@@ -3,7 +3,7 @@ use neli::attr::Attribute;
 use neli::rtnl::Rtattr;
 use neli::{
     consts::{
-        nl::{NlTypeWrapper, NlmF, NlmFFlags},
+        nl::{NlmF, NlmFFlags, Nlmsg},
         rtnl::{Arphrd, Iff, IffFlags, Ifla, IflaInfo, Rtm},
     },
     nl::{NlPayload, Nlmsghdr},
@@ -14,8 +14,7 @@ use std::convert::TryFrom;
 
 pub fn get_list_device_names_msg() -> Nlmsghdr<Rtm, Ifinfomsg> {
     let infomsg = {
-        let ifi_family =
-            neli::consts::rtnl::RtAddrFamily::UnrecognizedVariant(libc::AF_UNSPEC as u8);
+        let ifi_family = neli::consts::rtnl::RtAddrFamily::Unspecified;
         // Arphrd::Netrom corresponds to 0. Not sure why 0 is necessary here but this is what the
         // embedded C library does.
         let ifi_type = Arphrd::Netrom;
@@ -43,14 +42,18 @@ pub struct PotentialWireGuardDeviceName {
     pub is_wireguard: bool,
 }
 
-impl TryFrom<Nlmsghdr<NlTypeWrapper, Ifinfomsg>> for PotentialWireGuardDeviceName {
+impl TryFrom<Nlmsghdr<Nlmsg, Ifinfomsg>> for PotentialWireGuardDeviceName {
     type Error = ListDevicesError;
 
-    fn try_from(response: Nlmsghdr<NlTypeWrapper, Ifinfomsg>) -> Result<Self, Self::Error> {
+    fn try_from(response: Nlmsghdr<Nlmsg, Ifinfomsg>) -> Result<Self, Self::Error> {
         let mut is_wireguard = false;
         let mut ifname: Option<String> = None;
 
-        let handle = response.get_payload()?.rtattrs.get_attr_handle();
+        let payload = response
+            .nl_payload
+            .get_payload()
+            .ok_or(ListDevicesError::Unknown)?;
+        let handle = payload.rtattrs.get_attr_handle();
 
         for attr in handle.get_attrs() {
             match attr.rta_type {
@@ -60,12 +63,12 @@ impl TryFrom<Nlmsghdr<NlTypeWrapper, Ifinfomsg>> for PotentialWireGuardDeviceNam
                         .iter()
                         .filter(|attr: &&Rtattr<IflaInfo, _>| attr.rta_type == IflaInfo::Kind)
                     {
-                        is_wireguard |= info_kind.get_payload_as::<String>()?
+                        is_wireguard |= info_kind.get_payload_as_with_len::<String>()?
                             == crate::linux::consts::WG_GENL_NAME;
                     }
                 }
                 Ifla::Ifname => {
-                    ifname = Some(attr.get_payload_as::<String>()?);
+                    ifname = Some(attr.get_payload_as_with_len::<String>()?);
                 }
                 _ => {}
             }

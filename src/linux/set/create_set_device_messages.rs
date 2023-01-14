@@ -12,7 +12,7 @@ use neli::{
     genl::{Genlmsghdr, Nlattr},
     nl::{NlPayload, Nlmsghdr},
     types::{Buffer, GenlBuffer},
-    Nl,
+    Size,
 };
 use std::convert::TryInto;
 use std::net::SocketAddr;
@@ -38,7 +38,8 @@ impl IncubatingDeviceFragment {
             partial_device: {
                 let mut attrs = GenlBuffer::new();
 
-                let interface_attr = (&device.interface).try_into()?;
+                let interface_attr: Nlattr<WgDeviceAttribute, Buffer> =
+                    (&device.interface).try_into()?;
                 attrs.push(interface_attr);
 
                 if !device.flags.is_empty() {
@@ -46,7 +47,6 @@ impl IncubatingDeviceFragment {
                     unique.dedup();
 
                     attrs.push(Nlattr::new(
-                        None,
                         false,
                         NLA_NETWORK_ORDER,
                         WgDeviceAttribute::Flags,
@@ -56,7 +56,6 @@ impl IncubatingDeviceFragment {
 
                 if let Some(private_key) = device.private_key {
                     attrs.push(Nlattr::new(
-                        None,
                         false,
                         NLA_NETWORK_ORDER,
                         WgDeviceAttribute::PrivateKey,
@@ -66,7 +65,6 @@ impl IncubatingDeviceFragment {
 
                 if let Some(listen_port) = device.listen_port {
                     attrs.push(Nlattr::new(
-                        None,
                         false,
                         NLA_NETWORK_ORDER,
                         WgDeviceAttribute::ListenPort,
@@ -76,7 +74,6 @@ impl IncubatingDeviceFragment {
 
                 if let Some(fwmark) = device.fwmark {
                     attrs.push(Nlattr::new(
-                        None,
                         false,
                         NLA_NETWORK_ORDER,
                         WgDeviceAttribute::Fwmark,
@@ -89,8 +86,7 @@ impl IncubatingDeviceFragment {
 
                 attrs
             },
-            peers: Nlattr::new(
-                None,
+            peers: Nlattr::new::<Vec<u8>>(
                 false,
                 NLA_NETWORK_ORDER,
                 WgDeviceAttribute::Peers | NLA_F_NESTED,
@@ -102,16 +98,15 @@ impl IncubatingDeviceFragment {
     }
 
     fn from_interface(interface: &DeviceInterface) -> Result<Self, NlError> {
-        let interface_attr = {
+        let partial_device = {
             let mut buffer = GenlBuffer::new();
             buffer.push(interface.try_into()?);
             buffer
         };
 
         Ok(Self {
-            partial_device: interface_attr,
-            peers: Nlattr::new(
-                None,
+            partial_device,
+            peers: Nlattr::new::<Vec<u8>>(
                 false,
                 NLA_NETWORK_ORDER,
                 WgDeviceAttribute::Peers | NLA_F_NESTED,
@@ -121,16 +116,20 @@ impl IncubatingDeviceFragment {
     }
 
     fn incubating_size(&self) -> usize {
-        let attrs_size: usize = self.partial_device.iter().map(|attr| attr.asize()).sum();
+        let attrs_size: usize = self
+            .partial_device
+            .iter()
+            .map(|attr| attr.padded_size())
+            .sum();
 
-        NETLINK_HEADER_SIZE + GENL_HEADER_SIZE + attrs_size + self.peers.asize()
+        NETLINK_HEADER_SIZE + GENL_HEADER_SIZE + attrs_size + self.peers.padded_size()
     }
 
     fn finalize(self, family_id: NlWgMsgType) -> Result<NlWgMessage, NlError> {
         let mut device_attrs = self.partial_device;
 
         // TODO: Condition this behavior on whether peers have ever been added.
-        if self.peers.size() > GENL_HEADER_SIZE {
+        if self.peers.unpadded_size() > GENL_HEADER_SIZE {
             device_attrs.push(self.peers);
         }
 
@@ -160,8 +159,7 @@ struct IncubatingPeerFragment {
 
 impl IncubatingPeerFragment {
     fn split_off_allowed_ips(peer: Peer<'_>) -> Result<(Self, Vec<AllowedIp<'_>>), NlError> {
-        let mut partial_peer = Nlattr::new(
-            None,
+        let mut partial_peer = Nlattr::new::<Vec<u8>>(
             false,
             NLA_NETWORK_ORDER,
             NlaNested::Unspec | NLA_F_NESTED,
@@ -169,7 +167,6 @@ impl IncubatingPeerFragment {
         )?;
 
         let public_key = Nlattr::new(
-            None,
             false,
             NLA_NETWORK_ORDER,
             WgPeerAttribute::PublicKey,
@@ -182,7 +179,6 @@ impl IncubatingPeerFragment {
             unique.dedup();
 
             partial_peer.add_nested_attribute(&Nlattr::new(
-                None,
                 false,
                 NLA_NETWORK_ORDER,
                 WgPeerAttribute::Flags,
@@ -192,7 +188,6 @@ impl IncubatingPeerFragment {
 
         if let Some(preshared_key) = peer.preshared_key {
             partial_peer.add_nested_attribute(&Nlattr::new(
-                None,
                 false,
                 NLA_NETWORK_ORDER,
                 WgPeerAttribute::PresharedKey,
@@ -226,7 +221,6 @@ impl IncubatingPeerFragment {
             };
 
             partial_peer.add_nested_attribute(&Nlattr::new(
-                None,
                 false,
                 NLA_NETWORK_ORDER,
                 WgPeerAttribute::Endpoint,
@@ -236,7 +230,6 @@ impl IncubatingPeerFragment {
 
         if let Some(persistent_keepalive_interval) = peer.persistent_keepalive_interval {
             partial_peer.add_nested_attribute(&Nlattr::new(
-                None,
                 false,
                 NLA_NETWORK_ORDER,
                 WgPeerAttribute::PersistentKeepaliveInterval,
@@ -246,7 +239,6 @@ impl IncubatingPeerFragment {
 
         if let Some(protocol_version) = peer.protocol_version {
             partial_peer.add_nested_attribute(&Nlattr::new(
-                None,
                 false,
                 NLA_NETWORK_ORDER,
                 WgPeerAttribute::ProtocolVersion,
@@ -259,8 +251,7 @@ impl IncubatingPeerFragment {
 
         let incubating_peer_fragment = IncubatingPeerFragment {
             partial_peer,
-            allowed_ips: Nlattr::new(
-                None,
+            allowed_ips: Nlattr::new::<Vec<u8>>(
                 false,
                 NLA_NETWORK_ORDER,
                 WgPeerAttribute::AllowedIps | NLA_F_NESTED,
@@ -273,9 +264,8 @@ impl IncubatingPeerFragment {
 
     fn from_public_key(public_key: &[u8; 32]) -> Result<Self, NlError> {
         let mut partial_peer =
-            Nlattr::new(None, false, false, NlaNested::Unspec | NLA_F_NESTED, vec![])?;
-        let allowed_ips = Nlattr::new(
-            None,
+            Nlattr::new::<Vec<u8>>(false, false, NlaNested::Unspec | NLA_F_NESTED, vec![])?;
+        let allowed_ips = Nlattr::new::<Vec<u8>>(
             false,
             NLA_NETWORK_ORDER,
             WgPeerAttribute::AllowedIps | NLA_F_NESTED,
@@ -283,7 +273,6 @@ impl IncubatingPeerFragment {
         )?;
 
         let public_key = Nlattr::new(
-            None,
             false,
             NLA_NETWORK_ORDER,
             WgPeerAttribute::PublicKey,
@@ -298,12 +287,12 @@ impl IncubatingPeerFragment {
     }
 
     fn incubating_size(&self) -> usize {
-        self.partial_peer.asize() + self.allowed_ips.asize()
+        self.partial_peer.padded_size() + self.allowed_ips.padded_size()
     }
 
     fn finalize(self) -> Result<Nlattr<NlaNested, Buffer>, NlError> {
         let mut partial_peer = self.partial_peer;
-        if self.allowed_ips.size() > GENL_HEADER_SIZE {
+        if self.allowed_ips.padded_size() > GENL_HEADER_SIZE {
             partial_peer.add_nested_attribute(&self.allowed_ips)?;
         }
         Ok(partial_peer)
@@ -341,7 +330,7 @@ pub fn create_set_device_messages(
 
             let next_size = incubating_device_fragment.incubating_size()
                 + incubating_peer_fragment.incubating_size()
-                + allowed_ip_attr.asize();
+                + allowed_ip_attr.padded_size();
             if next_size > NETLINK_MSG_LIMIT {
                 let peer_fragment = incubating_peer_fragment.finalize()?;
                 incubating_device_fragment
