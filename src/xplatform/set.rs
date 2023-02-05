@@ -303,7 +303,7 @@ mod tests {
                 .remove(true),
             ],
         };
-        let actual = format!("{}", set_request);
+        let actual = format!("{set_request}");
 
         assert_eq!(expected, actual);
     }
@@ -341,7 +341,7 @@ mod tests {
             .endpoint("[abcd:23::33%2]:51820".parse().unwrap())],
             ..Default::default()
         };
-        let actual = format!("{}", set_request);
+        let actual = format!("{set_request}");
 
         assert_eq!(expected, actual);
     }
@@ -352,7 +352,7 @@ mod tests {
         let device1 = Device::default();
         let device2 = Device::default();
         assert_eq!(device1, device2);
-        format!("{:?}", device1);
+        format!("{device1:?}");
 
         let peer1 = Peer::from_public_key([
             0xb8, 0x59, 0x96, 0xfe, 0xcc, 0x9c, 0x7f, 0x1f, 0xc6, 0xd2, 0x57, 0x2a, 0x76, 0xed,
@@ -365,7 +365,7 @@ mod tests {
             0xa8, 0xe7, 0x5a, 0x33,
         ]);
         assert_eq!(peer1, peer2);
-        format!("{:?}", peer1);
+        format!("{peer1:?}");
 
         let allowed_ip1 = AllowedIp {
             ipaddr: "::1".parse().unwrap(),
@@ -376,6 +376,6 @@ mod tests {
             cidr_mask: 64,
         };
         assert_eq!(allowed_ip1, allowed_ip2);
-        format!("{:?}", allowed_ip1);
+        format!("{allowed_ip1:?}");
     }
 }

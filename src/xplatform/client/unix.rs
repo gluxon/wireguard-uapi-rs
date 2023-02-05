@@ -38,7 +38,7 @@ impl<P: AsRef<Path>> Client<P> {
         stream.write_all(SET_CMD.as_bytes())?;
         // TODO: This likely buffers the entire set_request in memory before
         // sending it across the socket. We can probably do better.
-        stream.write_fmt(format_args!("{}", set_request))?;
+        stream.write_fmt(format_args!("{set_request}"))?;
         stream.write_all(b"\n")?;
 
         let reader = std::io::BufReader::new(stream);

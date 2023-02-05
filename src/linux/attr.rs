@@ -59,7 +59,7 @@ impl NlAttrType for WgDeviceAttribute {}
 
 impl fmt::Display for WgDeviceAttribute {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
+        write!(f, "{self:?}")
     }
 }
 
@@ -85,7 +85,7 @@ impl NlAttrType for WgPeerAttribute {}
 
 impl fmt::Display for WgPeerAttribute {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
+        write!(f, "{self:?}")
     }
 }
 
