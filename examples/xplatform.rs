@@ -3,7 +3,6 @@ use wireguard_uapi::get::{AllowedIp, Device, Peer};
 
 fn main() -> anyhow::Result<()> {
     let sockets = std::fs::read_dir("/var/run/wireguard")?
-        .into_iter()
         .filter_map(|entry| entry.ok())
         .map(|entry| entry.path())
         .filter(|path| path.extension().map(|ext| ext == "sock").unwrap_or(false));
