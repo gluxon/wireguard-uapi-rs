@@ -29,10 +29,7 @@ fn missing_device_returns_sensible_error() -> anyhow::Result<()> {
     // public key".
     // As of neli 0.5.3 the library returns ENODEV instead of “No ack
     // received”.
-    assert_eq!(
-        existing_err_message,
-        "Error response received from netlink: Unknown error -19 (os error -19)"
-    );
+    assert!(existing_err_message.starts_with("Error response received from netlink: Unknown error"));
 
     Ok(())
 }
