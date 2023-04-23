@@ -12,7 +12,7 @@ env:
 
 jobs:
   clippy:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v2
       - name: Annotate commit with clippy warnings
@@ -38,7 +38,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-18.04, ubuntu-20.04]
+        os: [ubuntu-20.04, ubuntu-22.04]
     steps:
       - uses: actions/checkout@v2
       - name: Install WireGuard
@@ -61,7 +61,7 @@ jobs:
   # `-Zinstrument-coverage` is stable, combine this with the test job.
   # https://github.com/rust-lang/rust/issues/79121
   test_linux_coverage:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v2
       - name: Install WireGuard
