@@ -30,7 +30,7 @@ fn print_device(device: &Device) {
         println!("  {}: {}", "listen port".black().bold(), device.listen_port);
     }
 
-    for peer in &device.peers {
+    for peer in device.peers.values() {
         println!();
         print_peer(peer);
     }

@@ -1,4 +1,5 @@
 use derive_builder::Builder;
+use std::collections::BTreeMap;
 use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
 use std::time::Duration;
@@ -13,8 +14,20 @@ pub struct Device {
     pub public_key: Option<[u8; 32]>,
     pub listen_port: u16,
     pub fwmark: u32,
-    #[builder(default)]
-    pub peers: Vec<Peer>,
+    #[builder(default, setter(custom))]
+    pub peers: BTreeMap<[u8; 32], Peer>,
+}
+
+impl DeviceBuilder {
+    pub fn peers(&mut self, value: Vec<Peer>) -> &mut Self {
+        self.peers = Some(
+            value
+                .into_iter()
+                .map(|peer| (peer.public_key, peer))
+                .collect(),
+        );
+        self
+    }
 }
 
 #[derive(Builder, Clone, Debug, PartialEq, Eq)]

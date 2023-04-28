@@ -349,34 +349,36 @@ mod tests {
             allowed_ip=10.24.24.3/32\n\
             errno=0\n\
             \n";
-        let expected = get::Device {
-            ifindex: 0,
-            ifname: "".to_string(),
-            private_key: parse_device_key(&base64::decode(
-                "GKoQwFpTH1xTehhCazdjh/wsvXAa4bm0Jx4yeqrenU8=",
-            )?),
-            public_key: None,
-            listen_port: 56137,
-            fwmark: 0,
-            peers: vec![get::Peer {
-                public_key: parse_device_key(&base64::decode(
-                    "kT6g4g4owStcX1qFi5OgXmhtw85SThbzFDu7ECNnl1E=",
-                )?)
-                .unwrap(),
-                preshared_key: [0u8; 32],
-                endpoint: Some("192.168.64.73:51820".parse()?),
-                last_handshake_time: Duration::new(1_590_459_201, 283_546_000),
-                tx_bytes: 824,
-                rx_bytes: 696,
-                persistent_keepalive_interval: 110,
-                allowed_ips: vec![get::AllowedIp {
-                    family: 2,
-                    ipaddr: "10.24.24.3".parse()?,
-                    cidr_mask: 32,
-                }],
-                protocol_version: 1,
+        let peers = vec![get::Peer {
+            public_key: parse_device_key(&base64::decode(
+                "kT6g4g4owStcX1qFi5OgXmhtw85SThbzFDu7ECNnl1E=",
+            )?)
+            .unwrap(),
+            preshared_key: [0u8; 32],
+            endpoint: Some("192.168.64.73:51820".parse()?),
+            last_handshake_time: Duration::new(1_590_459_201, 283_546_000),
+            tx_bytes: 824,
+            rx_bytes: 696,
+            persistent_keepalive_interval: 110,
+            allowed_ips: vec![get::AllowedIp {
+                family: 2,
+                ipaddr: "10.24.24.3".parse()?,
+                cidr_mask: 32,
             }],
-        };
+            protocol_version: 1,
+        }];
+        let expected = get::DeviceBuilder::default()
+            .ifindex(0)
+            .ifname("".to_string())
+            .private_key(parse_device_key(&base64::decode(
+                "GKoQwFpTH1xTehhCazdjh/wsvXAa4bm0Jx4yeqrenU8=",
+            )?))
+            .public_key(None)
+            .listen_port(56137)
+            .fwmark(0)
+            .peers(peers)
+            .build()
+            .unwrap();
 
         let actual = parse(response.lines().map(String::from).map(Ok))?;
         assert_eq!(actual, expected);
@@ -391,17 +393,17 @@ mod tests {
             listen_port=56137\n\
             errno=0\n\
             \n";
-        let expected = get::Device {
-            ifindex: 0,
-            ifname: "".to_string(),
-            private_key: parse_device_key(&base64::decode(
+        let expected = get::DeviceBuilder::default()
+            .ifindex(0)
+            .ifname("".to_string())
+            .private_key(parse_device_key(&base64::decode(
                 "GKoQwFpTH1xTehhCazdjh/wsvXAa4bm0Jx4yeqrenU8=",
-            )?),
-            public_key: None,
-            listen_port: 56137,
-            fwmark: 0,
-            peers: vec![],
-        };
+            )?))
+            .public_key(None)
+            .listen_port(56137)
+            .fwmark(0)
+            .build()
+            .unwrap();
 
         let actual = parse(response.lines().map(String::from).map(Ok))?;
         assert_eq!(actual, expected);
@@ -436,83 +438,84 @@ mod tests {
             protocol_version=1\n\
             errno=0\n\
             \n";
-
-        let expected = get::Device {
-            ifindex: 0,
-            ifname: "".to_string(),
-            private_key: parse_device_key(&base64::decode(
+        let peers = vec![
+            get::Peer {
+                public_key: parse_device_key(&base64::decode(
+                    "uFmW/sycfx/G0lcqdu2hHVm80gvo5UOxXOS9hajnWjM=",
+                )?)
+                .unwrap(),
+                preshared_key: parse_device_key(&base64::decode(
+                    "GIUVCT6VL18i6GXO8wEucvi18LWYrAMJ1drM47cPz1I=",
+                )?)
+                .unwrap(),
+                endpoint: Some("[abcd:23::33]:51820".parse()?),
+                last_handshake_time: Duration::new(0, 0),
+                tx_bytes: 0,
+                rx_bytes: 0,
+                persistent_keepalive_interval: 0,
+                allowed_ips: vec![get::AllowedIp {
+                    family: 2,
+                    ipaddr: "192.168.4.4".parse()?,
+                    cidr_mask: 32,
+                }],
+                protocol_version: 1,
+            },
+            get::Peer {
+                public_key: parse_device_key(&base64::decode(
+                    "WEAuaVuhdyscyTCXVfBDJR6nf9zxD75jmJzrfhkyE3Y=",
+                )?)
+                .unwrap(),
+                preshared_key: [0u8; 32],
+                endpoint: Some("182.122.22.19:3233".parse()?),
+                last_handshake_time: Duration::new(0, 0),
+                tx_bytes: 38333,
+                rx_bytes: 2224,
+                persistent_keepalive_interval: 111,
+                allowed_ips: vec![get::AllowedIp {
+                    family: 2,
+                    ipaddr: "192.168.4.6".parse()?,
+                    cidr_mask: 32,
+                }],
+                protocol_version: 1,
+            },
+            get::Peer {
+                public_key: parse_device_key(&base64::decode(
+                    "Zi4U/VlFVvUiYEcDNANRJYkDtk81VTdj8ZQmqypRXFg=",
+                )?)
+                .unwrap(),
+                preshared_key: [0u8; 32],
+                endpoint: Some("5.152.198.39:51820".parse()?),
+                last_handshake_time: Duration::new(0, 0),
+                tx_bytes: 1_212_111,
+                rx_bytes: 1_929_999_999,
+                persistent_keepalive_interval: 0,
+                allowed_ips: vec![
+                    get::AllowedIp {
+                        family: 2,
+                        ipaddr: "192.168.4.10".parse()?,
+                        cidr_mask: 32,
+                    },
+                    get::AllowedIp {
+                        family: 2,
+                        ipaddr: "192.168.4.11".parse()?,
+                        cidr_mask: 32,
+                    },
+                ],
+                protocol_version: 1,
+            },
+        ];
+        let expected = get::DeviceBuilder::default()
+            .ifindex(0)
+            .ifname("".to_string())
+            .private_key(parse_device_key(&base64::decode(
                 "6EtabScXwQA6E7QxVwNT26ypFGzxUMX4V1aA/rpSAno=",
-            )?),
-            public_key: None,
-            listen_port: 12912,
-            fwmark: 0,
-            peers: vec![
-                get::Peer {
-                    public_key: parse_device_key(&base64::decode(
-                        "uFmW/sycfx/G0lcqdu2hHVm80gvo5UOxXOS9hajnWjM=",
-                    )?)
-                    .unwrap(),
-                    preshared_key: parse_device_key(&base64::decode(
-                        "GIUVCT6VL18i6GXO8wEucvi18LWYrAMJ1drM47cPz1I=",
-                    )?)
-                    .unwrap(),
-                    endpoint: Some("[abcd:23::33]:51820".parse()?),
-                    last_handshake_time: Duration::new(0, 0),
-                    tx_bytes: 0,
-                    rx_bytes: 0,
-                    persistent_keepalive_interval: 0,
-                    allowed_ips: vec![get::AllowedIp {
-                        family: 2,
-                        ipaddr: "192.168.4.4".parse()?,
-                        cidr_mask: 32,
-                    }],
-                    protocol_version: 1,
-                },
-                get::Peer {
-                    public_key: parse_device_key(&base64::decode(
-                        "WEAuaVuhdyscyTCXVfBDJR6nf9zxD75jmJzrfhkyE3Y=",
-                    )?)
-                    .unwrap(),
-                    preshared_key: [0u8; 32],
-                    endpoint: Some("182.122.22.19:3233".parse()?),
-                    last_handshake_time: Duration::new(0, 0),
-                    tx_bytes: 38333,
-                    rx_bytes: 2224,
-                    persistent_keepalive_interval: 111,
-                    allowed_ips: vec![get::AllowedIp {
-                        family: 2,
-                        ipaddr: "192.168.4.6".parse()?,
-                        cidr_mask: 32,
-                    }],
-                    protocol_version: 1,
-                },
-                get::Peer {
-                    public_key: parse_device_key(&base64::decode(
-                        "Zi4U/VlFVvUiYEcDNANRJYkDtk81VTdj8ZQmqypRXFg=",
-                    )?)
-                    .unwrap(),
-                    preshared_key: [0u8; 32],
-                    endpoint: Some("5.152.198.39:51820".parse()?),
-                    last_handshake_time: Duration::new(0, 0),
-                    tx_bytes: 1_212_111,
-                    rx_bytes: 1_929_999_999,
-                    persistent_keepalive_interval: 0,
-                    allowed_ips: vec![
-                        get::AllowedIp {
-                            family: 2,
-                            ipaddr: "192.168.4.10".parse()?,
-                            cidr_mask: 32,
-                        },
-                        get::AllowedIp {
-                            family: 2,
-                            ipaddr: "192.168.4.11".parse()?,
-                            cidr_mask: 32,
-                        },
-                    ],
-                    protocol_version: 1,
-                },
-            ],
-        };
+            )?))
+            .public_key(None)
+            .listen_port(12912)
+            .fwmark(0)
+            .peers(peers)
+            .build()
+            .unwrap();
 
         let actual = parse(response.lines().map(String::from).map(Ok))?;
         assert_eq!(actual, expected);
