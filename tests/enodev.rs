@@ -27,9 +27,10 @@ fn missing_device_returns_sensible_error() -> anyhow::Result<()> {
     // TODO: Ensure this library returns more sensible errors. Update the "No
     // ack received" string below to "No device found by interface name or
     // public key".
-    // As of neli 0.5.3 the library returns ENODEV instead of “No ack
-    // received”.
-    assert!(existing_err_message.starts_with("Error response received from netlink: Unknown error"));
+    // As of neli 0.6.5 the library returns "No such device".
+    assert!(
+        existing_err_message.starts_with("Error response received from netlink: No such device")
+    );
 
     Ok(())
 }
