@@ -22,7 +22,7 @@ impl<'a> AllowedIp<'a> {
     }
 }
 
-impl<'a> TryFrom<&AllowedIp<'a>> for Nlattr<NlaNested, Buffer> {
+impl TryFrom<&AllowedIp<'_>> for Nlattr<NlaNested, Buffer> {
     type Error = NlError;
 
     fn try_from(allowed_ip: &AllowedIp) -> Result<Self, Self::Error> {

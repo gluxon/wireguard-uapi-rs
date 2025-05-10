@@ -20,7 +20,7 @@ impl<'a> DeviceInterface<'a> {
     }
 }
 
-impl<'a> TryFrom<&DeviceInterface<'a>> for Nlattr<WgDeviceAttribute, Buffer> {
+impl TryFrom<&DeviceInterface<'_>> for Nlattr<WgDeviceAttribute, Buffer> {
     type Error = NlError;
 
     fn try_from(interface: &DeviceInterface) -> Result<Self, Self::Error> {
