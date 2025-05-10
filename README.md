@@ -34,6 +34,20 @@ Compiled binaries need the `CAP_NET_ADMIN` capability to read network interfaces
 sudo setcap CAP_NET_ADMIN=+eip ./my-compiled-binary
 ```
 
+## Developing
+
+Similar to the above, the compiled test binaries need permission to interface with the kernel. The easiest way to do this (that the author is aware of) is to run the tests with `sudo`.
+
+```toml
+# .cargo/config.toml
+
+[target.x86_64-unknown-linux-gnu]
+runner = "sudo"
+
+[target.aarch64-unknown-linux-gnu]
+runner = "sudo"
+```
+
 ## Disclaimer
 
 This isn't an official WireGuard product. (Although I'm interested in making it so.)
