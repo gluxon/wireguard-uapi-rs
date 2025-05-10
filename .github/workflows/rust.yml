@@ -42,7 +42,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install WireGuard
-        run: sudo apt update && sudo apt install wireguard-dkms
+        run: sudo apt update && sudo apt install wireguard-tools
       - name: Build
         uses: actions-rs/cargo@v1
         with:
@@ -65,7 +65,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install WireGuard
-        run: sudo apt update && sudo apt install wireguard-dkms
+        run: sudo apt update && sudo apt install wireguard-tools
       - name: Setup nightly Rust
         uses: actions-rs/toolchain@v1
         with:
