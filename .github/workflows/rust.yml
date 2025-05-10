@@ -111,7 +111,9 @@ jobs:
           command: test
           args: --all-features
         env:
+          # Tests require root permissions.
           CARGO_TARGET_X86_64_APPLE_DARWIN_RUNNER: sudo
+          CARGO_TARGET_AARCH64_APPLE_DARWIN_RUNNER: sudo
 
   # Similar to the plain "coverage" job, this is a separate job since it requires nightly Rust.
   test_macos_coverage:
@@ -131,7 +133,10 @@ jobs:
           command: test
           args: --all-features --no-fail-fast
         env:
+          # Tests require root permissions.
           CARGO_TARGET_X86_64_APPLE_DARWIN_RUNNER: sudo
+          CARGO_TARGET_AARCH64_APPLE_DARWIN_RUNNER: sudo
+
           CARGO_INCREMENTAL: '0'
           RUSTFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
           RUSTDOCFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
