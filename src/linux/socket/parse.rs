@@ -199,7 +199,9 @@ impl TryFrom<AttrHandle<'_, WgAllowedIpAttribute>> for AllowedIp {
                         len if len == size_of::<in_addr>() => IpAddr::V4(parse_in_addr(payload)?),
                         len if len == size_of::<in6_addr>() => IpAddr::V6(parse_in6_addr(payload)?),
                         len => {
-                            return Err(ParseDeviceError::from(ParseAttributeError::from(ParseIpAddrError::InvalidIpAddrLengthError { found: len })))
+                            return Err(ParseDeviceError::from(ParseAttributeError::from(
+                                ParseIpAddrError::InvalidIpAddrLengthError { found: len },
+                            )))
                         }
                     };
                     allowed_ip_builder.ipaddr(addr);
