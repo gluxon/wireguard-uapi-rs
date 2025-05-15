@@ -3,14 +3,16 @@ use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
 use std::time::Duration;
 
+use crate::key::Key;
+
 #[derive(Builder, Debug, PartialEq, Eq)]
 pub struct Device {
     pub ifindex: u32,
     pub ifname: String,
     #[builder(default)]
-    pub private_key: Option<[u8; 32]>,
+    pub private_key: Option<Key>,
     #[builder(default)]
-    pub public_key: Option<[u8; 32]>,
+    pub public_key: Option<Key>,
     pub listen_port: u16,
     pub fwmark: u32,
     #[builder(default)]
@@ -22,8 +24,8 @@ pub struct Peer {
     // The public_key and allowed_ips fields are public to
     // make peer coalescing easier.
     #[builder(field(public))]
-    pub public_key: [u8; 32],
-    pub preshared_key: [u8; 32],
+    pub public_key: Key,
+    pub preshared_key: Key,
     #[builder(default)]
     pub endpoint: Option<SocketAddr>,
     pub persistent_keepalive_interval: u16,

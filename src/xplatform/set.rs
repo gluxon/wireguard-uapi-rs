@@ -1,3 +1,4 @@
+use crate::key::Key;
 use crate::xplatform::protocol::SetKey;
 use std::fmt::Display;
 use std::net::IpAddr;
@@ -11,7 +12,7 @@ pub struct Device {
     /// the interface. The value may be an all zero string in the case of a set
     /// operation, in which case it indicates that the private key should be
     /// removed.
-    pub private_key: Option<[u8; 32]>,
+    pub private_key: Option<Key>,
 
     /// The value for this is a decimal-string integer corresponding to the
     /// listening port of the interface.
@@ -32,7 +33,7 @@ pub struct Device {
 
 impl Display for Device {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(private_key) = self.private_key {
+        if let Some(private_key) = &self.private_key {
             let private_key = hex::encode(private_key);
             writeln!(f, "{}={}", SetKey::PrivateKey, private_key)?;
         }
@@ -80,7 +81,7 @@ pub struct Peer {
     /// the previously added peer entry. The value may be an all zero string in
     /// the case of a set operation, in which case it indicates that the
     /// preshared-key should be removed.
-    pub preshared_key: Option<[u8; 32]>,
+    pub preshared_key: Option<Key>,
 
     /// The value for this key is either IP:port for IPv4 or \[IP\]:port for
     /// IPv6, indicating the endpoint of the previously added peer entry.
@@ -128,7 +129,7 @@ impl Peer {
         self
     }
 
-    pub fn preshared_key(mut self, preshared_key: [u8; 32]) -> Self {
+    pub fn preshared_key(mut self, preshared_key: Key) -> Self {
         self.preshared_key = Some(preshared_key);
         self
     }
@@ -166,7 +167,7 @@ impl Display for Peer {
             writeln!(f, "{}={}", SetKey::UpdateOnly, update_only)?;
         }
 
-        if let Some(preshared_key) = self.preshared_key {
+        if let Some(preshared_key) = &self.preshared_key {
             let preshared_key = hex::encode(preshared_key);
             writeln!(f, "{}={}", SetKey::PresharedKey, preshared_key)?;
         }
@@ -241,11 +242,14 @@ mod tests {
             remove=true\n";
 
         let set_request = Device {
-            private_key: Some([
-                0xe8, 0x4b, 0x5a, 0x6d, 0x27, 0x17, 0xc1, 0x00, 0x3a, 0x13, 0xb4, 0x31, 0x57, 0x03,
-                0x53, 0xdb, 0xac, 0xa9, 0x14, 0x6c, 0xf1, 0x50, 0xc5, 0xf8, 0x57, 0x56, 0x80, 0xfe,
-                0xba, 0x52, 0x02, 0x7a,
-            ]),
+            private_key: Some(
+                [
+                    0xe8, 0x4b, 0x5a, 0x6d, 0x27, 0x17, 0xc1, 0x00, 0x3a, 0x13, 0xb4, 0x31, 0x57,
+                    0x03, 0x53, 0xdb, 0xac, 0xa9, 0x14, 0x6c, 0xf1, 0x50, 0xc5, 0xf8, 0x57, 0x56,
+                    0x80, 0xfe, 0xba, 0x52, 0x02, 0x7a,
+                ]
+                .into(),
+            ),
             listen_port: Some(12912),
             fwmark: Some(0),
             replace_peers: Some(true),
@@ -255,11 +259,14 @@ mod tests {
                     0xed, 0xa1, 0x1d, 0x59, 0xbc, 0xd2, 0x0b, 0xe8, 0xe5, 0x43, 0xb1, 0x5c, 0xe4,
                     0xbd, 0x85, 0xa8, 0xe7, 0x5a, 0x33,
                 ])
-                .preshared_key([
-                    0x18, 0x85, 0x15, 0x09, 0x3e, 0x95, 0x2f, 0x5f, 0x22, 0xe8, 0x65, 0xce, 0xf3,
-                    0x01, 0x2e, 0x72, 0xf8, 0xb5, 0xf0, 0xb5, 0x98, 0xac, 0x03, 0x09, 0xd5, 0xda,
-                    0xcc, 0xe3, 0xb7, 0x0f, 0xcf, 0x52,
-                ])
+                .preshared_key(
+                    [
+                        0x18, 0x85, 0x15, 0x09, 0x3e, 0x95, 0x2f, 0x5f, 0x22, 0xe8, 0x65, 0xce,
+                        0xf3, 0x01, 0x2e, 0x72, 0xf8, 0xb5, 0xf0, 0xb5, 0x98, 0xac, 0x03, 0x09,
+                        0xd5, 0xda, 0xcc, 0xe3, 0xb7, 0x0f, 0xcf, 0x52,
+                    ]
+                    .into(),
+                )
                 .replace_allowed_ips(true)
                 .allowed_ips(vec![AllowedIp {
                     ipaddr: "192.168.4.4".parse().unwrap(),
@@ -322,11 +329,14 @@ mod tests {
         .join("\n");
 
         let set_request = Device {
-            private_key: Some([
-                0xe8, 0x4b, 0x5a, 0x6d, 0x27, 0x17, 0xc1, 0x00, 0x3a, 0x13, 0xb4, 0x31, 0x57, 0x03,
-                0x53, 0xdb, 0xac, 0xa9, 0x14, 0x6c, 0xf1, 0x50, 0xc5, 0xf8, 0x57, 0x56, 0x80, 0xfe,
-                0xba, 0x52, 0x02, 0x7a,
-            ]),
+            private_key: Some(
+                [
+                    0xe8, 0x4b, 0x5a, 0x6d, 0x27, 0x17, 0xc1, 0x00, 0x3a, 0x13, 0xb4, 0x31, 0x57,
+                    0x03, 0x53, 0xdb, 0xac, 0xa9, 0x14, 0x6c, 0xf1, 0x50, 0xc5, 0xf8, 0x57, 0x56,
+                    0x80, 0xfe, 0xba, 0x52, 0x02, 0x7a,
+                ]
+                .into(),
+            ),
             peers: vec![Peer::from_public_key([
                 0xb8, 0x59, 0x96, 0xfe, 0xcc, 0x9c, 0x7f, 0x1f, 0xc6, 0xd2, 0x57, 0x2a, 0x76, 0xed,
                 0xa1, 0x1d, 0x59, 0xbc, 0xd2, 0x0b, 0xe8, 0xe5, 0x43, 0xb1, 0x5c, 0xe4, 0xbd, 0x85,

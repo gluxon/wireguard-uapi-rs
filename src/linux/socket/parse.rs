@@ -1,5 +1,6 @@
 use crate::err::{ParseAttributeError, ParseDeviceError, ParseIpAddrError, ParseSockAddrError};
 use crate::get::{AllowedIp, AllowedIpBuilder, Device, DeviceBuilder, Peer, PeerBuilder};
+use crate::key::Key;
 use crate::linux::attr::{
     NlaNested, WgAllowedIpAttribute, WgDeviceAttribute, WgPeerAttribute, NLA_TYPE_MASK,
 };
@@ -87,7 +88,7 @@ pub fn extend_device(
         let matching_last_peer = device
             .peers
             .last_mut()
-            .filter(|last_peer| Some(last_peer.public_key) == next_peer.public_key);
+            .filter(|last_peer| Some(&last_peer.public_key) == next_peer.public_key.as_ref());
 
         match matching_last_peer {
             Some(matching_last_peer) => matching_last_peer
@@ -269,7 +270,7 @@ pub fn parse_nla_nul_string(payload: &[u8]) -> Result<String, ParseAttributeErro
     Ok(String::from_utf8(payload)?)
 }
 
-pub fn parse_device_key(buf: &[u8]) -> Result<[u8; 32], ParseAttributeError> {
+pub fn parse_device_key(buf: &[u8]) -> Result<Key, ParseAttributeError> {
     Some(buf.len()).filter(|&len| len == 32).ok_or({
         ParseAttributeError::StaticLengthError {
             expected: 32,
@@ -277,7 +278,7 @@ pub fn parse_device_key(buf: &[u8]) -> Result<[u8; 32], ParseAttributeError> {
         }
     })?;
 
-    let mut key = [0u8; 32];
+    let mut key = Key::default();
     key.copy_from_slice(buf);
     Ok(key)
 }
@@ -376,7 +377,7 @@ mod tests {
                     public_key: parse_device_key(&base64::decode(
                         "xTIBA5rboUvnH4htodjb6e697QjLERt1NAB4mZqp8Dg",
                     )?)?,
-                    preshared_key: [0u8; 32],
+                    preshared_key: Key::default(),
                     endpoint: Some("192.95.5.67:1234".parse()?),
                     persistent_keepalive_interval: 0,
                     last_handshake_time: Duration::new(0, 0),
@@ -400,7 +401,7 @@ mod tests {
                     public_key: parse_device_key(&base64::decode(
                         "TrMvSoP4jYQlY6RIzBgbssQqY3vxI2Pi+y71lOWWXX0=",
                     )?)?,
-                    preshared_key: [0u8; 32],
+                    preshared_key: Key::default(),
                     endpoint: Some("[2607:5300:60:6b0::c05f:543]:2468".parse()?),
                     persistent_keepalive_interval: 0,
                     last_handshake_time: Duration::new(0, 0),
@@ -789,7 +790,7 @@ mod tests {
                     public_key: parse_device_key(&base64::decode(
                         "xTIBA5rboUvnH4htodjb6e697QjLERt1NAB4mZqp8Dg="
                     )?)?,
-                    preshared_key: [0u8; 32],
+                    preshared_key: Key::default(),
                     endpoint: Some("192.95.5.67:1234".parse()?),
                     persistent_keepalive_interval: 0,
                     last_handshake_time: Duration::new(0, 0),

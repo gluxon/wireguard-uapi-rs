@@ -1,12 +1,14 @@
 use super::state::{ParsePeerState, ParseState};
 use crate::get;
 use crate::get::{DeviceBuilderError, ParseAllowedIpError, PeerBuilderError};
+use crate::key::Key;
 use crate::xplatform::protocol::{GetKey, ParseKeyError};
 use std::net::AddrParseError;
 use std::num::ParseIntError;
 use std::{str::FromStr, time::Duration};
 use take_until::TakeUntilExt;
 use thiserror::Error;
+use zeroize::Zeroize;
 
 #[derive(Error, Debug)]
 pub enum ParseGetResponseError {
@@ -146,9 +148,9 @@ fn process_line(
     match state {
         ParseState::Initial(mut device_builder) => match key {
             GetKey::PrivateKey => {
-                let private_key: [u8; 32] = hex::decode(raw_val)
+                let private_key: Key = hex::decode(raw_val)
                     .ok()
-                    .and_then(|buf| parse_device_key(&buf))
+                    .and_then(parse_device_key)
                     .ok_or(ParseErr::InvalidPrivateKey)?;
                 device_builder.private_key(Some(private_key));
                 Ok(ParseState::InterfaceLevelKeys(device_builder))
@@ -184,10 +186,10 @@ fn process_line(
                 let mut peer_builder = get::PeerBuilder::default();
                 let public_key = hex::decode(raw_val)
                     .ok()
-                    .and_then(|buf| parse_device_key(&buf))
+                    .and_then(parse_device_key)
                     .ok_or_else(|| ParseErr::InvalidPublicKey(raw_val.to_string()))?;
                 peer_builder.public_key(public_key);
-                peer_builder.preshared_key([0u8; 32]);
+                peer_builder.preshared_key(Key::default());
                 peer_builder.persistent_keepalive_interval(0);
                 peer_builder.tx_bytes(0);
                 peer_builder.rx_bytes(0);
@@ -239,10 +241,10 @@ fn process_line(
                 state.peer_builder = get::PeerBuilder::default();
                 let public_key = hex::decode(raw_val)
                     .ok()
-                    .and_then(|buf| parse_device_key(&buf))
+                    .and_then(parse_device_key)
                     .ok_or_else(|| ParseErr::InvalidPublicKey(raw_val.to_string()))?;
                 state.peer_builder.public_key(public_key);
-                state.peer_builder.preshared_key([0u8; 32]);
+                state.peer_builder.preshared_key(Key::default());
                 state.peer_builder.persistent_keepalive_interval(0);
                 state.peer_builder.tx_bytes(0);
                 state.peer_builder.rx_bytes(0);
@@ -254,7 +256,7 @@ fn process_line(
             GetKey::PresharedKey => {
                 let preshared_key = hex::decode(raw_val)
                     .ok()
-                    .and_then(|buf| parse_device_key(&buf))
+                    .and_then(parse_device_key)
                     .ok_or_else(|| ParseErr::InvalidPresharedKey(raw_val.to_string()))?;
                 state.peer_builder.preshared_key(preshared_key);
                 Ok(ParseState::PeerLevelKeys(state))
@@ -316,20 +318,21 @@ fn process_line(
 }
 
 // TODO: Get this from a shared util
-pub fn parse_device_key(buf: &[u8]) -> Option<[u8; 32]> {
+pub fn parse_device_key(mut buf: Vec<u8>) -> Option<Key> {
     if buf.len() != 32 {
         return None;
     }
 
-    let mut key = [0u8; 32];
-    key.copy_from_slice(buf);
+    let mut key = Key::default();
+    key.copy_from_slice(&buf);
+    buf.zeroize();
     Some(key)
 }
 
 #[cfg(test)]
 mod tests {
     use super::{parse, parse_device_key};
-    use crate::get;
+    use crate::{get, key::Key};
     use std::time::Duration;
 
     #[test]
@@ -352,18 +355,18 @@ mod tests {
         let expected = get::Device {
             ifindex: 0,
             ifname: "".to_string(),
-            private_key: parse_device_key(&base64::decode(
+            private_key: parse_device_key(base64::decode(
                 "GKoQwFpTH1xTehhCazdjh/wsvXAa4bm0Jx4yeqrenU8=",
             )?),
             public_key: None,
             listen_port: 56137,
             fwmark: 0,
             peers: vec![get::Peer {
-                public_key: parse_device_key(&base64::decode(
+                public_key: parse_device_key(base64::decode(
                     "kT6g4g4owStcX1qFi5OgXmhtw85SThbzFDu7ECNnl1E=",
                 )?)
                 .unwrap(),
-                preshared_key: [0u8; 32],
+                preshared_key: Key::default(),
                 endpoint: Some("192.168.64.73:51820".parse()?),
                 last_handshake_time: Duration::new(1_590_459_201, 283_546_000),
                 tx_bytes: 824,
@@ -394,7 +397,7 @@ mod tests {
         let expected = get::Device {
             ifindex: 0,
             ifname: "".to_string(),
-            private_key: parse_device_key(&base64::decode(
+            private_key: parse_device_key(base64::decode(
                 "GKoQwFpTH1xTehhCazdjh/wsvXAa4bm0Jx4yeqrenU8=",
             )?),
             public_key: None,
@@ -440,7 +443,7 @@ mod tests {
         let expected = get::Device {
             ifindex: 0,
             ifname: "".to_string(),
-            private_key: parse_device_key(&base64::decode(
+            private_key: parse_device_key(base64::decode(
                 "6EtabScXwQA6E7QxVwNT26ypFGzxUMX4V1aA/rpSAno=",
             )?),
             public_key: None,
@@ -448,11 +451,11 @@ mod tests {
             fwmark: 0,
             peers: vec![
                 get::Peer {
-                    public_key: parse_device_key(&base64::decode(
+                    public_key: parse_device_key(base64::decode(
                         "uFmW/sycfx/G0lcqdu2hHVm80gvo5UOxXOS9hajnWjM=",
                     )?)
                     .unwrap(),
-                    preshared_key: parse_device_key(&base64::decode(
+                    preshared_key: parse_device_key(base64::decode(
                         "GIUVCT6VL18i6GXO8wEucvi18LWYrAMJ1drM47cPz1I=",
                     )?)
                     .unwrap(),
@@ -469,11 +472,11 @@ mod tests {
                     protocol_version: 1,
                 },
                 get::Peer {
-                    public_key: parse_device_key(&base64::decode(
+                    public_key: parse_device_key(base64::decode(
                         "WEAuaVuhdyscyTCXVfBDJR6nf9zxD75jmJzrfhkyE3Y=",
                     )?)
                     .unwrap(),
-                    preshared_key: [0u8; 32],
+                    preshared_key: Key::default(),
                     endpoint: Some("182.122.22.19:3233".parse()?),
                     last_handshake_time: Duration::new(0, 0),
                     tx_bytes: 38333,
@@ -487,11 +490,11 @@ mod tests {
                     protocol_version: 1,
                 },
                 get::Peer {
-                    public_key: parse_device_key(&base64::decode(
+                    public_key: parse_device_key(base64::decode(
                         "Zi4U/VlFVvUiYEcDNANRJYkDtk81VTdj8ZQmqypRXFg=",
                     )?)
                     .unwrap(),
-                    preshared_key: [0u8; 32],
+                    preshared_key: Key::default(),
                     endpoint: Some("5.152.198.39:51820".parse()?),
                     last_handshake_time: Duration::new(0, 0),
                     tx_bytes: 1_212_111,
