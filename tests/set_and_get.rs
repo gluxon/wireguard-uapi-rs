@@ -1,4 +1,7 @@
 #[cfg(target_os = "linux")]
+use wireguard_uapi::key::Key;
+
+#[cfg(target_os = "linux")]
 use {
     std::net::{IpAddr, Ipv6Addr},
     std::time::Duration,
@@ -11,8 +14,8 @@ fn get_random_ifname() -> String {
 }
 
 #[cfg(target_os = "linux")]
-fn parse_device_key(buf: &[u8]) -> [u8; 32] {
-    let mut key = [0u8; 32];
+fn parse_device_key(buf: &[u8]) -> Key {
+    let mut key = Key::default();
     key.copy_from_slice(buf);
     key
 }
@@ -47,7 +50,7 @@ fn simple() -> anyhow::Result<()> {
                 public_key: parse_device_key(&base64::decode(
                     "DNeiCuVE2CuDy9QH3K3/egRK1rdn/oThlPtWNc4FfSw=",
                 )?),
-                preshared_key: [0u8; 32],
+                preshared_key: Key::default(),
                 endpoint: Some("[::1]:8080".parse()?),
                 persistent_keepalive_interval: 0,
                 last_handshake_time: Duration::new(0, 0),
@@ -172,7 +175,7 @@ fn large_peer() -> anyhow::Result<()> {
             public_key: parse_device_key(&base64::decode(
                 "xTIBA5rboUvnH4htodjb6e697QjLERt1NAB4mZqp8Dg=",
             )?),
-            preshared_key: [0u8; 32],
+            preshared_key: Key::default(),
             endpoint: Some("192.95.5.67:1234".parse()?),
             persistent_keepalive_interval: 0,
             last_handshake_time: Duration::new(0, 0),

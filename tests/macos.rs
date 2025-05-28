@@ -8,6 +8,7 @@ mod tests {
     use std::path::PathBuf;
     use std::process::Command;
     use tempfile::NamedTempFile;
+    use wireguard_uapi::key::Key;
 
     const MACOS_WG_SOCK_DIR: &str = "/var/run/wireguard";
 
@@ -21,7 +22,7 @@ mod tests {
         // /var/run/wireguard folder.
         // https://github.com/WireGuard/wireguard-go#macos
         let wireguard_go_status = Command::new("wireguard-go")
-            .args(&["utun"])
+            .args(["utun"])
             .env("WG_TUN_NAME_FILE", ifname_output_file.path().as_os_str())
             .status()?;
         if !wireguard_go_status.success() {
@@ -75,9 +76,9 @@ mod tests {
         let interface = client.get()?;
         assert_eq!(interface.private_key, None);
 
-        let private_key = curve25519_clamp(rand::random());
+        let private_key: Key = curve25519_clamp(rand::random()).into();
         client.set(set::Device {
-            private_key: Some(private_key),
+            private_key: Some(private_key.clone()),
             ..Default::default()
         })?;
         let interface = client.get()?;
